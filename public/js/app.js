@@ -1813,6 +1813,31 @@ function addGoalSavings(id, currentSaved, currentTarget) {
     addGoalSavingsModal(id, currentSaved, currentTarget);
 }
 
+async function deleteDreamGoal(id) {
+    if (!confirm('Are you sure you want to delete this Dream Goal?')) return;
+    try {
+        const res = await fetchWithAuth(`/api/dashboard/goals/${id}`, {
+            method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.error) {
+            alert(data.error);
+        } else {
+            const goalCard = document.getElementById(`goal-card-${id}`);
+            if (goalCard) {
+                goalCard.style.transition = 'all 0.3s ease';
+                goalCard.style.opacity = '0';
+                goalCard.style.transform = 'scale(0.95)';
+                setTimeout(() => goalCard.remove(), 300);
+            }
+            await loadDashboardData();
+        }
+    } catch (err) {
+        console.error('[Delete Dream Goal Error]:', err);
+        alert('Failed to delete Dream Goal: ' + err.message);
+    }
+}
+
 
 // Savings Opportunities & Hidden Expenses Engine (Tabbed Module)
 let currentSavingsTab = 'leaks';

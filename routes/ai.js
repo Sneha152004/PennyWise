@@ -93,7 +93,13 @@ router.post('/predict-regret', authenticateToken, async (req, res) => {
         // --- 1. INCOME RISK (25%) ---
         const priceRatio = monthlyIncome > 0 ? (cost / monthlyIncome) : 0.05;
         let incomeRisk = 10;
-        if (priceRatio >= 0.20) {
+        if (priceRatio >= 1.0) {
+            incomeRisk = 100;
+            reasons.push(`Purchase price (${currency}${cost.toLocaleString()}) exceeds your entire monthly income (${Math.round(priceRatio * 100)}%).`);
+        } else if (priceRatio >= 0.50) {
+            incomeRisk = 95;
+            reasons.push(`Purchase price is ${Math.round(priceRatio * 100)}% of your monthly income (extreme risk).`);
+        } else if (priceRatio >= 0.20) {
             incomeRisk = 90;
             reasons.push(`Purchase price is ${Math.round(priceRatio * 100)}% of your monthly income (exceeds 20% high risk threshold).`);
         } else if (priceRatio >= 0.10) {
@@ -114,7 +120,10 @@ router.post('/predict-regret', authenticateToken, async (req, res) => {
         const catMonthSpending = parseFloat(catExpRes[0]?.total || 0);
         const catRatio = monthlyIncome > 0 ? (catMonthSpending / monthlyIncome) : 0;
         let categoryRisk = 20;
-        if (catRatio > 0.20) {
+        if (priceRatio >= 1.0 || catRatio > 0.50) {
+            categoryRisk = 100;
+            reasons.push(`${cat} expense would severely overwhelm your monthly budget.`);
+        } else if (catRatio > 0.20) {
             categoryRisk = 80;
             reasons.push(`${cat} expenses already exceed 20% of your monthly income (${currency}${catMonthSpending.toFixed(0)} spent).`);
         } else if (catRatio >= 0.10) {
@@ -171,7 +180,9 @@ router.post('/predict-regret', authenticateToken, async (req, res) => {
         const delayDays = Math.ceil(cost / dailySavings);
         
         let goalRisk = 10;
-        if (delayDays > 7) {
+        if (delayDays > 30 || priceRatio >= 1.0) {
+            goalRisk = 100;
+        } else if (delayDays > 7) {
             goalRisk = 80;
         } else if (delayDays >= 1) {
             goalRisk = 40;

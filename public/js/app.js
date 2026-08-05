@@ -893,67 +893,120 @@ async function runRegretPredictor() {
     const priceInput = document.getElementById('rp-price');
     const catInput = document.getElementById('rp-category');
     const moodInput = document.getElementById('rp-mood');
+    const valErr = document.getElementById('rp-validation-err');
 
-    const item = itemInput && itemInput.value ? itemInput.value.trim() : 'Gaming Chair';
-    const price = priceInput && priceInput.value ? parseFloat(priceInput.value) : 500;
-    const category = catInput ? catInput.value : 'Shopping';
-    const mood = moodInput ? moodInput.value : 'Stressed';
+    const item = itemInput ? itemInput.value.trim() : '';
+    const rawPrice = priceInput ? priceInput.value.trim() : '';
+    const price = parseFloat(rawPrice);
+    const category = catInput ? catInput.value : '';
+    const mood = moodInput ? moodInput.value : '';
+
+    // STEP 2: VALIDATION - Do not calculate unless ALL fields are filled
+    if (!item || !rawPrice || isNaN(price) || price <= 0 || !category || !mood) {
+        if (valErr) {
+            valErr.style.display = 'block';
+            valErr.innerText = '⚠️ Please enter all details to calculate regret risk.';
+        }
+        return;
+    }
+
+    if (valErr) valErr.style.display = 'none';
 
     const res = await fetchWithAuth('/api/ai/predict-regret', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item_name: item, price, category, mood })
     });
-    const data = await res.json();
-    if (data.currency) currentCurrency = data.currency;
+    const rawData = await res.json();
+    if (rawData.currency) currentCurrency = rawData.currency;
 
-    const box = document.getElementById('rp-result');
-    box.style.display = 'block';
+    // STEP 5: SAFE DEFAULTS (Never display undefined, NaN, or null)
+    const data = {
+        regret_score: (rawData.regret_score ?? rawData.score ?? 0),
+        risk_level: rawData.risk_level ?? 'Low risk 🟢',
+        prediction: rawData.prediction ?? 'Low risk. Purchase aligns with your budget.',
+        reasons: Array.isArray(rawData.reasons) ? rawData.reasons : [],
+        recommendation: rawData.recommendation ?? 'This purchase fits well within your financial habits and goals.',
+        components: {
+            income_risk: rawData.components?.income_risk ?? 0,
+            category_risk: rawData.components?.category_risk ?? 0,
+            mood_risk: rawData.components?.mood_risk ?? 0,
+            impulse_risk: rawData.components?.impulse_risk ?? 0,
+            goal_risk: rawData.components?.goal_risk ?? 0,
+            history_risk: rawData.components?.history_risk ?? 0
+        }
+    };
 
+    // Risk Color Logic
     let riskColor = 'var(--accent-green)';
     if (data.regret_score > 80) riskColor = 'var(--accent-red)';
     else if (data.regret_score >= 61) riskColor = '#f97316';
     else if (data.regret_score >= 31) riskColor = 'var(--accent-yellow)';
 
-    box.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-glass); padding-bottom:10px; margin-bottom:12px;">
+    // RENDER CENTER PANEL: SCORE BREAKDOWN
+    const breakdownBox = document.getElementById('rp-breakdown-box');
+    if (breakdownBox) {
+        const factors = [
+            { label: 'Income Risk (25%)', val: data.components.income_risk, color: '#6366f1' },
+            { label: 'Category Risk (20%)', val: data.components.category_risk, color: '#f59e0b' },
+            { label: 'Mood Risk (15%)', val: data.components.mood_risk, color: '#ec4899' },
+            { label: 'Impulse Risk (15%)', val: data.components.impulse_risk, color: '#ef4444' },
+            { label: 'Goal Delay Risk (15%)', val: data.components.goal_risk, color: '#06b6d4' },
+            { label: 'Category History (10%)', val: data.components.history_risk, color: '#10b981' }
+        ];
+
+        breakdownBox.innerHTML = factors.map(f => `
             <div>
-                <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">REGRET RISK SCORE</div>
-                <div style="font-size:24px; font-weight:800; color:${riskColor}; margin-top:2px;">
-                    ${data.regret_score}/100
+                <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; margin-bottom:3px; color:var(--text-main);">
+                    <span>${f.label}</span>
+                    <span style="color:${f.color};">${f.val}/100</span>
+                </div>
+                <div class="xp-bar-bg" style="height:6px; background:rgba(255,255,255,0.06);">
+                    <div style="height:100%; width:${Math.min(100, Math.max(0, f.val))}%; background:${f.color}; border-radius:4px; transition:width 0.4s ease;"></div>
                 </div>
             </div>
-            <div style="text-align:right;">
-                <span style="font-size:13px; font-weight:800; padding:6px 14px; border-radius:20px; background:rgba(99,102,241,0.15); color:${riskColor}; border:1px solid ${riskColor};">
+        `).join('');
+    }
+
+    // RENDER RIGHT PANEL: FINAL RESULT & VERDICT
+    const verdictBox = document.getElementById('rp-verdict-box');
+    if (verdictBox) {
+        verdictBox.innerHTML = `
+            <div style="text-align:center; padding:12px; background:var(--bg-inner); border-radius:var(--radius-sm); border:1px solid var(--border-glass); margin-bottom:12px;">
+                <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted);">REGRET RISK SCORE</div>
+                <div style="font-size:32px; font-weight:900; color:${riskColor}; margin:4px 0;">
+                    ${data.regret_score}/100
+                </div>
+                <span style="font-size:12px; font-weight:800; padding:4px 12px; border-radius:14px; background:rgba(99,102,241,0.15); color:${riskColor}; border:1px solid ${riskColor}; inline-block;">
                     ${data.risk_level}
                 </span>
             </div>
-        </div>
 
-        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:8px;">
-            <i class="fa-solid fa-bullseye"></i> Prediction: <span style="color:${riskColor};">${data.prediction}</span>
-        </div>
-
-        <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Calculated Risk Factors:</div>
-        <ul style="margin-left:18px; font-size:12px; color:var(--text-main); line-height:1.6; margin-bottom:12px;">
-            ${(data.reasons || []).map(r => `<li>${r}</li>`).join('')}
-        </ul>
-
-        <div style="background:rgba(6,182,212,0.12); border:1px solid var(--accent-cyan); padding:10px 12px; border-radius:var(--radius-sm); font-size:12px; margin-bottom:14px; color:var(--text-main);">
-            <strong>💡 Recommendation:</strong> ${data.recommendation}
-        </div>
-
-        <!-- Learning System 7-Day Feedback Prompt -->
-        <div style="border-top:1px dashed var(--border-glass); padding-top:10px;">
-            <div style="font-size:11px; color:var(--text-muted); font-weight:700; margin-bottom:6px;">LEARNING SYSTEM: Do you think this purchase was worth it?</div>
-            <div style="display:flex; gap:8px;">
-                <button class="btn btn-secondary" style="flex:1; font-size:11px; padding:4px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'Yes')">🟢 Yes</button>
-                <button class="btn btn-secondary" style="flex:1; font-size:11px; padding:4px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'Neutral')">🟡 Neutral</button>
-                <button class="btn btn-secondary" style="flex:1; font-size:11px; padding:4px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'No')">🔴 No</button>
+            <div style="font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:8px;">
+                <i class="fa-solid fa-bullseye" style="color:${riskColor};"></i> <strong>Verdict:</strong> ${data.prediction}
             </div>
-            <div id="rp-feedback-msg" style="font-size:11px; color:var(--accent-green); font-weight:700; margin-top:6px; display:none;"></div>
-        </div>
-    `;
+
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Main Reasons:</div>
+            <ul style="margin-left:16px; font-size:11px; color:var(--text-main); line-height:1.5; margin-bottom:12px; padding:0;">
+                ${data.reasons.length > 0 ? data.reasons.map(r => `<li style="margin-bottom:4px;">${r}</li>`).join('') : '<li>No high risk behavioral triggers detected.</li>'}
+            </ul>
+
+            <div style="background:rgba(6,182,212,0.12); border:1px solid var(--accent-cyan); padding:8px 10px; border-radius:var(--radius-sm); font-size:11px; margin-bottom:12px; color:var(--text-main);">
+                <strong>💡 Recommendation:</strong> ${data.recommendation}
+            </div>
+
+            <!-- Learning System Feedback Buttons -->
+            <div style="border-top:1px dashed var(--border-glass); padding-top:8px;">
+                <div style="font-size:10px; color:var(--text-muted); font-weight:700; margin-bottom:6px;">7-Day Learning Feedback: Was it worth it?</div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn btn-secondary" style="flex:1; font-size:10px; padding:3px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'Yes')">🟢 Yes</button>
+                    <button class="btn btn-secondary" style="flex:1; font-size:10px; padding:3px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'Neutral')">🟡 Neutral</button>
+                    <button class="btn btn-secondary" style="flex:1; font-size:10px; padding:3px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'No')">🔴 No</button>
+                </div>
+                <div id="rp-feedback-msg" style="font-size:10px; color:var(--accent-green); font-weight:700; margin-top:4px; display:none;"></div>
+            </div>
+        `;
+    }
 }
 
 async function submitPurchaseFeedback(title, score, feedbackVal) {

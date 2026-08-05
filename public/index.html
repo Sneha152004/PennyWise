@@ -373,46 +373,97 @@
                     <div id="sib-result" class="feature-box" style="margin-top:16px; display:none;"></div>
                 </div>
 
-                <!-- 2. Regret Predictor -->
-                <div class="glass-card">
+                <!-- 2. Regret Predictor (3-PANEL ENGINE) -->
+                <div class="glass-card" style="grid-column: span 2;">
                     <div class="card-header">
-                        <div class="card-title">💀 Regret Predictor</div>
-                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Behavioral score-based regret engine calculating financial, mood & goal risks.</p>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label>Item Name</label>
-                            <input type="text" class="form-control" id="rp-item" placeholder="e.g. Gaming Chair">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label>Price</label>
-                            <input type="number" class="form-control" id="rp-price" placeholder="e.g. 500">
-                        </div>
+                        <div class="card-title"><i class="fa-solid fa-brain" style="color:var(--accent-red);"></i> Regret Predictor Engine</div>
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label>Category</label>
-                            <select class="form-control" id="rp-category">
-                                <option value="Shopping">Shopping</option>
-                                <option value="Food & Groceries">Food & Groceries</option>
-                                <option value="Dining & Drinks">Dining & Drinks</option>
-                                <option value="Entertainment">Entertainment</option>
-                                <option value="Transportation">Transportation</option>
-                                <option value="Utilities">Utilities</option>
-                            </select>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Real-time score-based behavioral prediction engine analyzing financial risk, mood patterns, and goal delays.</p>
+
+                    <!-- 3-PANEL GRID LAYOUT -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px;">
+                        
+                        <!-- LEFT PANEL: INPUTS -->
+                        <div style="background:var(--bg-inner); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-glass);">
+                            <div style="font-size:13px; font-weight:800; color:var(--primary); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                                <i class="fa-solid fa-pen-to-square"></i> 1. Purchase Details
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:12px;">Item Name <span style="color:var(--accent-red);">*</span></label>
+                                <input type="text" class="form-control" id="rp-item" placeholder="e.g. Gaming Chair">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:12px;">Price (₹) <span style="color:var(--accent-red);">*</span></label>
+                                <input type="number" class="form-control" id="rp-price" placeholder="e.g. 5000">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:12px;">Category <span style="color:var(--accent-red);">*</span></label>
+                                <select class="form-control" id="rp-category">
+                                    <option value="">-- Select Category --</option>
+                                    <option value="Food & Groceries">Food & Groceries</option>
+                                    <option value="Dining & Drinks">Dining & Drinks</option>
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Health">Health</option>
+                                    <option value="Travel">Travel</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom:14px;">
+                                <label style="font-size:12px;">Current Mood <span style="color:var(--accent-red);">*</span></label>
+                                <select class="form-control" id="rp-mood">
+                                    <option value="">-- Select Mood --</option>
+                                    <option value="Happy">Happy 😊</option>
+                                    <option value="Neutral">Neutral 😐</option>
+                                    <option value="Excited">Excited 🤩</option>
+                                    <option value="Bored">Bored 🥱</option>
+                                    <option value="Stressed">Stressed 🤯</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-primary" style="width:100%; font-weight:800; font-size:13px;" onclick="runRegretPredictor()">
+                                <i class="fa-solid fa-calculator"></i> Calculate Regret Risk
+                            </button>
+
+                            <div id="rp-validation-err" style="font-size:12px; color:var(--accent-red); font-weight:700; margin-top:10px; text-align:center; display:none;">
+                                ⚠️ Please enter all details to calculate regret risk.
+                            </div>
                         </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label>Current Mood</label>
-                            <select class="form-control" id="rp-mood">
-                                <option value="Neutral">Neutral 😐</option>
-                                <option value="Happy">Happy 😊</option>
-                                <option value="Excited">Excited 🤩</option>
-                                <option value="Bored">Bored 🥱</option>
-                                <option value="Stressed">Stressed 🤯</option>
-                            </select>
+
+                        <!-- CENTER PANEL: SCORE BREAKDOWN -->
+                        <div style="background:var(--bg-inner); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-glass);">
+                            <div style="font-size:13px; font-weight:800; color:var(--accent-yellow); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                                <i class="fa-solid fa-chart-pie"></i> 2. Risk Score Breakdown
+                            </div>
+                            
+                            <div id="rp-breakdown-box" style="display:flex; flex-direction:column; gap:10px;">
+                                <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:30px 0;">
+                                    Fill out purchase details to view the 6 weighted risk factors.
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- RIGHT PANEL: FINAL RESULT -->
+                        <div style="background:var(--bg-inner); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-glass);">
+                            <div style="font-size:13px; font-weight:800; color:var(--accent-cyan); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                                <i class="fa-solid fa-shield-halved"></i> 3. Prediction & Verdict
+                            </div>
+                            
+                            <div id="rp-verdict-box">
+                                <div style="font-size:12px; color:var(--text-muted); text-align:center; padding:30px 0;">
+                                    Calculated regret score & behavioral verdict will appear here.
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                    <button class="btn btn-secondary" style="width:100%;" onclick="runRegretPredictor()"><i class="fa-solid fa-brain"></i> Calculate Regret Risk Score</button>
-                    <div id="rp-result" class="feature-box" style="margin-top:16px; display:none;"></div>
                 </div>
 
                 <!-- 13. Opportunity Cost Calculator -->

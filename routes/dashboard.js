@@ -309,8 +309,9 @@ router.get('/', authenticateToken, async (req, res) => {
             });
         }
 
-        // Budgets, recent expenses & deductions
+        // Budgets, goals, recent expenses & deductions
         const budgets = await db.query('SELECT * FROM budgets WHERE user_id = ?', [userId]);
+        const goalsList = await db.query('SELECT * FROM savings_goals WHERE user_id = ? ORDER BY id DESC', [userId]);
         const recentExpenses = await db.query('SELECT DISTINCT date FROM expenses WHERE user_id = ? ORDER BY date DESC', [userId]);
         const deductionsList = await db.query('SELECT * FROM deductions WHERE user_id = ?', [userId]);
         const moodStats = await db.query(`
@@ -352,6 +353,7 @@ router.get('/', authenticateToken, async (req, res) => {
                 }
             },
             budgets,
+            goals: goalsList,
             ai_smart_alerts: aiSmartAlerts,
             mood_analytics: moodStats,
             deductions: deductionsList,

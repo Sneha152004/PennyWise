@@ -745,8 +745,8 @@ function renderDreamJourneyMap(goal) {
     else if (progressPct >= 20) currentLevel = 2;
 
     const isCompleted = progressPct >= 100;
-    const unlockedTitle = goal.unlocked_title || theme.nodes[currentLevel - 1].title;
-    const weatherType = theme.weatherType || getWeatherTypeByTheme(themeKey);
+    const unlockedTitle = goal.unlocked_title || (theme && theme.nodes && theme.nodes[currentLevel - 1] ? (theme.nodes[currentLevel - 1].name || 'Penny Beginner') : 'Penny Beginner');
+    const weatherType = theme ? (theme.weatherType || getWeatherTypeByTheme(themeKey)) : 'gold_dust';
 
     let nodesHTML = '';
     theme.nodes.forEach((node, index) => {

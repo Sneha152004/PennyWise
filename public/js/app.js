@@ -558,10 +558,28 @@ async function loadDashboardData() {
         // Render Visual Goals & Journey Maps
         const goalsBox = document.getElementById('goals-container');
         if (goalsBox) {
-            if (!data.goals || data.goals.length === 0) {
+            let goalsToRender = data.goals;
+            if (!goalsToRender || !Array.isArray(goalsToRender) || goalsToRender.length === 0) {
+                try {
+                    const gRes = await fetchWithAuth('/api/dream-goals');
+                    const gData = await gRes.json();
+                    if (Array.isArray(gData) && gData.length > 0) {
+                        goalsToRender = gData;
+                    }
+                } catch (err) {
+                    console.error('[Goals Fetch Fallback Error]:', err);
+                }
+            }
+
+            if (!goalsToRender || goalsToRender.length === 0) {
                 goalsBox.innerHTML = `<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:24px;" class="glass-card">No dream goals set yet. Choose a theme and launch your first Dream Journey Map above!</div>`;
             } else {
-                goalsBox.innerHTML = data.goals.map(g => renderDreamJourneyMap(g)).join('');
+                try {
+                    goalsBox.innerHTML = goalsToRender.map(g => renderDreamJourneyMap(g)).join('');
+                } catch (err) {
+                    console.error('[Goals Map Render Error]:', err);
+                    goalsBox.innerHTML = `<div style="color:var(--accent-red); font-size:13px; text-align:center; padding:24px;" class="glass-card">Error rendering dream goal journey map: ${err.message}</div>`;
+                }
             }
         }
 

@@ -1691,38 +1691,74 @@ async function generateMonthlyReport() {
 
 // Dream Goals Management Handlers
 async function addDreamGoal() {
-    const title = document.getElementById('goal-title-input').value.trim();
-    const theme = typeof getSelectedGoalTheme === 'function' ? getSelectedGoalTheme() : 'tokyo';
-    const target = document.getElementById('goal-target-input').value;
-    const current = document.getElementById('goal-current-input').value || 0;
-    const date = document.getElementById('goal-date-input').value;
+    const goalTitleInput = document.getElementById('goal-title-input');
+    const goalCategorySelect = document.getElementById('goal-category-select');
+    const goalDestinationSelect = document.getElementById('goal-destination-select');
+    const customDestinationInput = document.getElementById('goal-custom-destination-input');
+    const targetInput = document.getElementById('goal-target-input');
+    const currentInput = document.getElementById('goal-current-input');
+    const dateInput = document.getElementById('goal-date-input');
 
-    if (!title || !target) {
-        alert('Please enter a Goal Name and Target Budget.');
+    const goalName = goalTitleInput ? goalTitleInput.value.trim() : '';
+    const category = goalCategorySelect ? goalCategorySelect.value : 'travel';
+    let destination = goalDestinationSelect ? goalDestinationSelect.value : '';
+    if (customDestinationInput && customDestinationInput.value.trim()) {
+        destination = customDestinationInput.value.trim();
+    }
+    const targetAmount = targetInput ? parseFloat(targetInput.value) : 0;
+    const initialAmount = currentInput ? parseFloat(currentInput.value || 0) : 0;
+    const targetDate = dateInput ? dateInput.value : null;
+
+    const theme = typeof getSelectedGoalTheme === 'function' ? getSelectedGoalTheme() : (category || 'tokyo');
+
+    if (!goalName || isNaN(targetAmount) || targetAmount <= 0) {
+        alert('Please enter a Goal Name and valid Target Budget.');
         return;
     }
+
+    // STEP 1 & STEP 2 DEBUG LOGGING
+    console.log('[Dream Goals UI Debug] Form Submission:', {
+        goalName,
+        category,
+        destination,
+        targetAmount,
+        initialAmount,
+        targetDate,
+        theme
+    });
+
+    const payload = {
+        title: goalName,
+        goalName,
+        category,
+        destination,
+        target_amount: targetAmount,
+        targetAmount,
+        current_amount: initialAmount,
+        savedAmount: initialAmount,
+        target_date: targetDate,
+        targetDate,
+        theme
+    };
 
     const res = await fetchWithAuth('/api/dashboard/goals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            title,
-            target_amount: parseFloat(target),
-            current_amount: parseFloat(current),
-            target_date: date,
-            theme
-        })
+        body: JSON.stringify(payload)
     });
     const data = await res.json();
+    console.log('[Dream Goals API Debug] Response:', res.status, data);
+
     if (data.error) alert(data.error);
     else {
-        document.getElementById('goal-title-input').value = '';
-        document.getElementById('goal-target-input').value = '';
-        document.getElementById('goal-current-input').value = '0';
-        document.getElementById('goal-date-input').value = '';
-        const customInput = document.getElementById('goal-custom-destination-input');
-        if (customInput) customInput.value = '';
-        loadDashboardData();
+        if (goalTitleInput) goalTitleInput.value = '';
+        if (targetInput) targetInput.value = '';
+        if (currentInput) currentInput.value = '0';
+        if (dateInput) dateInput.value = '';
+        if (customDestinationInput) customDestinationInput.value = '';
+        
+        // STEP 5: INSTANT STATE UPDATE & RE-RENDER
+        await loadDashboardData();
     }
 }
 

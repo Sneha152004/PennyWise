@@ -451,25 +451,76 @@ function calculateGoalProgression(currentAmount, targetAmount) {
     return { pct, level, title, xpAwarded };
 }
 
-// POST /api/dashboard/goals - Add new dream goal
-router.post('/goals', authenticateToken, async (req, res) => {
+// POST /api/dashboard/goals & /api/dream-goals - Add new dream goal
+async function handleCreateDreamGoal(req, res) {
     try {
-        const { title, target_amount, current_amount, target_date, image_emoji, theme } = req.body;
+        const { title, goalName, target_amount, targetAmount, current_amount, savedAmount, initialAmount, target_date, targetDate, image_emoji, theme, category, destination } = req.body;
         const userId = req.user.id;
 
-        const target = parseFloat(target_amount) || 1000;
-        const current = parseFloat(current_amount) || 0;
+        const goalTitle = title || goalName || 'Dream Journey Goal';
+        const target = parseFloat(target_amount || targetAmount || 1000);
+        const current = parseFloat(current_amount || savedAmount || initialAmount || 0);
         const emoji = image_emoji || '🎯';
-        const goalTheme = theme || 'tokyo';
+        const goalTheme = theme || category || 'tokyo';
+        const goalCat = category || 'travel';
+        const goalDest = destination || '';
+        const goalDate = target_date || targetDate || null;
+
+        console.log('[Dream Goals API Debug] POST Payload received:', {
+            userId,
+            goalTitle,
+            goalCat,
+            goalDest,
+            target,
+            current,
+            goalDate,
+            goalTheme
+        });
 
         const { level, title: unlockedTitle, xpAwarded } = calculateGoalProgression(current, target);
 
         const result = await db.query(`
-            INSERT INTO savings_goals (user_id, title, target_amount, current_amount, target_date, image_emoji, theme, current_level, xp, unlocked_title)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [userId, title, target, current, target_date || null, emoji, goalTheme, level, xpAwarded, unlockedTitle]);
+            INSERT INTO savings_goals (user_id, title, category, destination, target_amount, current_amount, target_date, image_emoji, theme, current_level, xp, unlocked_title)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [userId, goalTitle, goalCat, goalDest, target, current, goalDate, emoji, goalTheme, level, xpAwarded, unlockedTitle]);
 
-        res.json({ message: 'Dream Goal added successfully!', id: result.id, theme: goalTheme, current_level: level, unlocked_title: unlockedTitle });
+        console.log('[Dream Goals API Debug] SQL Insert executed successfully with ID:', result.id);
+
+        const fetchCheck = await db.query('SELECT * FROM savings_goals WHERE user_id = ? ORDER BY id DESC', [userId]);
+        console.log('[Dream Goals API Debug] SQL Fetch check for user ID:', userId, 'Total rows returned:', fetchCheck.length);
+
+        res.json({
+            message: 'Dream Goal added successfully!',
+            id: result.id,
+            userId,
+            goalName: goalTitle,
+            title: goalTitle,
+            category: goalCat,
+            destination: goalDest,
+            targetAmount: target,
+            savedAmount: current,
+            target_amount: target,
+            current_amount: current,
+            theme: goalTheme,
+            current_level: level,
+            unlocked_title: unlockedTitle
+        });
+    } catch (err) {
+        console.error('[Dream Goals API Error]:', err);
+        res.status(500).json({ error: err.message });
+    }
+}
+
+router.post('/goals', authenticateToken, handleCreateDreamGoal);
+
+// Mount alias route for /api/dream-goals in server.js or router
+router.post('/dream-goals', authenticateToken, handleCreateDreamGoal);
+router.get('/dream-goals', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const goals = await db.query('SELECT * FROM savings_goals WHERE user_id = ? ORDER BY id DESC', [userId]);
+        console.log('[Dream Goals API Debug] GET /api/dream-goals for user ID:', userId, 'Rows count:', goals.length);
+        res.json(goals);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

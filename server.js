@@ -23,6 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API Routes
 app.use('/api/auth', authRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/dream-goals', dashboardRouter);
 app.use('/api/expenses', expensesRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/gamification', gamificationRouter);

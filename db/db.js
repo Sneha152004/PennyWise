@@ -78,7 +78,6 @@ async function initDb() {
             await query(`ALTER TABLE user_settings ADD COLUMN currency TEXT DEFAULT '$'`);
         } catch (e) { /* Column already exists */ }
 
-        // Ensure missing columns on existing savings_goals table are added
         try {
             await query(`ALTER TABLE savings_goals ADD COLUMN theme TEXT DEFAULT 'tokyo'`);
         } catch (e) { /* Column already exists */ }
@@ -91,6 +90,21 @@ async function initDb() {
         try {
             await query(`ALTER TABLE savings_goals ADD COLUMN unlocked_title TEXT DEFAULT 'Penny Beginner'`);
         } catch (e) { /* Column already exists */ }
+        try {
+            await query(`ALTER TABLE savings_goals ADD COLUMN category TEXT DEFAULT 'travel'`);
+        } catch (e) { /* Column already exists */ }
+        try {
+            await query(`ALTER TABLE savings_goals ADD COLUMN destination TEXT DEFAULT ''`);
+        } catch (e) { /* Column already exists */ }
+
+        // Create dream_goals view for compatibility
+        try {
+            await query(`
+                CREATE VIEW IF NOT EXISTS dream_goals AS
+                SELECT id, user_id, title AS goal_name, category, destination, target_amount, current_amount AS saved_amount, target_date, created_at
+                FROM savings_goals
+            `);
+        } catch (e) { /* View already exists */ }
 
         // Ensure missing columns on subscriptions table are migrated safely with valid literal defaults
         try { await query(`ALTER TABLE subscriptions ADD COLUMN category TEXT DEFAULT 'Entertainment'`); } catch (e) {}

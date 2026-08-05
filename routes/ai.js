@@ -57,34 +57,225 @@ router.post('/should-i-buy', authenticateToken, async (req, res) => {
     }
 });
 
-// 2. Regret Predictor Analysis
+// 2. Real Score-Based Regret Predictor Engine
 router.post('/predict-regret', authenticateToken, async (req, res) => {
     try {
-        const { item_name, category, price } = req.body;
+        const { item_name, itemName, item_title, category, price, amount, mood, current_mood } = req.body;
         const userId = req.user.id;
         const currency = await getUserCurrency(userId);
 
-        // Fetch previous purchases in similar category with satisfaction score
-        const pastPurchases = await db.query(`
-            SELECT title, amount, satisfaction_score FROM expenses
-            WHERE user_id = ? AND (category = ? OR is_impulse = 1) AND satisfaction_score IS NOT NULL
-        `, [userId, category || 'Shopping']);
+        const title = item_name || itemName || item_title || 'Purchase Item';
+        const cost = parseFloat(price || amount || 0);
+        const cat = category || 'Shopping';
+        const currentMood = mood || current_mood || 'Neutral';
 
-        let avgSatisfaction = 3.8;
-        if (pastPurchases.length > 0) {
-            const sum = pastPurchases.reduce((acc, curr) => acc + curr.satisfaction_score, 0);
-            avgSatisfaction = (sum / pastPurchases.length).toFixed(1);
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+        const thisMonthYM = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+
+        // Fetch User Settings & Income
+        const settingsRes = await db.query('SELECT monthly_income_target FROM user_settings WHERE user_id = ?', [userId]);
+        const incomeRes = await db.query('SELECT SUM(amount) as total FROM income WHERE user_id = ?', [userId]);
+        const monthlyIncome = (incomeRes[0]?.total !== null && incomeRes[0]?.total !== undefined && parseFloat(incomeRes[0].total) > 0)
+            ? parseFloat(incomeRes[0].total)
+            : parseFloat(settingsRes[0]?.monthly_income_target || 5200);
+
+        // Fetch Current Month Expenses
+        const expRes = await db.query(`
+            SELECT SUM(amount) as total FROM expenses
+            WHERE user_id = ? AND (date LIKE ? OR created_at LIKE ?)
+        `, [userId, `${thisMonthYM}%`, `${thisMonthYM}%`]);
+        const monthlyExpenses = parseFloat(expRes[0]?.total || 0);
+
+        const reasons = [];
+
+        // --- 1. INCOME RISK (25%) ---
+        const priceRatio = monthlyIncome > 0 ? (cost / monthlyIncome) : 0.05;
+        let incomeRisk = 10;
+        if (priceRatio >= 0.20) {
+            incomeRisk = 90;
+            reasons.push(`Purchase price is ${Math.round(priceRatio * 100)}% of your monthly income (exceeds 20% high risk threshold).`);
+        } else if (priceRatio >= 0.10) {
+            incomeRisk = 60;
+            reasons.push(`Purchase price accounts for ${Math.round(priceRatio * 100)}% of your monthly income.`);
+        } else if (priceRatio >= 0.05) {
+            incomeRisk = 30;
+            reasons.push(`Purchase price accounts for ${Math.round(priceRatio * 100)}% of your monthly income.`);
+        } else {
+            incomeRisk = 10;
         }
 
-        const isHighRisk = avgSatisfaction < 6.0 || price > 150;
-        const prediction = isHighRisk ? "You're likely to regret this purchase." : "You're likely to enjoy this purchase.";
-        const explanation = `Previous similar impulse or ${category} purchases had an average satisfaction score of ${avgSatisfaction}/10.`;
+        // --- 2. CATEGORY RISK (20%) ---
+        const catExpRes = await db.query(`
+            SELECT SUM(amount) as total FROM expenses
+            WHERE user_id = ? AND category = ? AND (date LIKE ? OR created_at LIKE ?)
+        `, [userId, cat, `${thisMonthYM}%`, `${thisMonthYM}%`]);
+        const catMonthSpending = parseFloat(catExpRes[0]?.total || 0);
+        const catRatio = monthlyIncome > 0 ? (catMonthSpending / monthlyIncome) : 0;
+        let categoryRisk = 20;
+        if (catRatio > 0.20) {
+            categoryRisk = 80;
+            reasons.push(`${cat} expenses already exceed 20% of your monthly income (${currency}${catMonthSpending.toFixed(0)} spent).`);
+        } else if (catRatio >= 0.10) {
+            categoryRisk = 50;
+            reasons.push(`${cat} expenses account for ${Math.round(catRatio * 100)}% of your monthly income.`);
+        } else {
+            categoryRisk = 20;
+        }
+
+        // --- 3. MOOD RISK (15%) ---
+        const moodScores = { 'Happy': 20, 'Neutral': 10, 'Excited': 40, 'Bored': 70, 'Stressed': 85 };
+        let moodRisk = moodScores[currentMood] || 30;
+        
+        const impulseMoodRes = await db.query(`
+            SELECT COUNT(*) as cnt FROM expenses
+            WHERE user_id = ? AND mood = ? AND is_impulse = 1
+        `, [userId, currentMood]);
+        const impulseMoodCnt = impulseMoodRes[0]?.cnt || 0;
+        if (impulseMoodCnt > 0) {
+            moodRisk = Math.min(100, moodRisk + Math.min(15, impulseMoodCnt * 5));
+        }
+        if (moodRisk >= 70) {
+            reasons.push(`Most purchases in this category happen when your mood is ${currentMood.toLowerCase()}.`);
+        }
+
+        // --- 4. IMPULSE RISK (15%) ---
+        const impulseRes = await db.query(`
+            SELECT COUNT(*) as cnt FROM expenses
+            WHERE user_id = ? AND is_impulse = 1 AND (date LIKE ? OR created_at LIKE ?)
+        `, [userId, `${thisMonthYM}%`, `${thisMonthYM}%`]);
+        const impulseCount = impulseRes[0]?.cnt || 0;
+        let impulseRisk = 10;
+        if (impulseCount > 10) {
+            impulseRisk = 90;
+            reasons.push(`You made ${impulseCount} impulse purchases this month.`);
+        } else if (impulseCount >= 6) {
+            impulseRisk = 70;
+            reasons.push(`You made ${impulseCount} impulse purchases this month.`);
+        } else if (impulseCount >= 3) {
+            impulseRisk = 40;
+            reasons.push(`You made ${impulseCount} impulse purchases this month.`);
+        } else {
+            impulseRisk = 10;
+        }
+
+        // --- 5. DREAM GOAL RISK (15%) ---
+        const goalRes = await db.query(`
+            SELECT title, target_amount, current_amount FROM savings_goals
+            WHERE user_id = ? ORDER BY id DESC LIMIT 1
+        `, [userId]);
+        const activeGoal = goalRes[0] || { title: 'Savings Target', target_amount: 100000, current_amount: 50000 };
+        const netMonthlySavings = Math.max(300, (monthlyIncome - monthlyExpenses));
+        const dailySavings = Math.max(10, netMonthlySavings / 30);
+        const delayDays = Math.ceil(cost / dailySavings);
+        
+        let goalRisk = 10;
+        if (delayDays > 7) {
+            goalRisk = 80;
+        } else if (delayDays >= 1) {
+            goalRisk = 40;
+        } else {
+            goalRisk = 10;
+        }
+        const goalDelayText = `This purchase delays your ${activeGoal.title} goal by ${delayDays} days.`;
+        reasons.push(goalDelayText);
+
+        // --- 6. HISTORY RISK (10%) ---
+        const historyRes = await db.query(`
+            SELECT COUNT(*) as total, SUM(CASE WHEN is_impulse = 1 THEN 1 ELSE 0 END) as impulse_cnt
+            FROM expenses WHERE user_id = ? AND category = ?
+        `, [userId, cat]);
+        const historyImpulseCnt = historyRes[0]?.impulse_cnt || 0;
+        let historyRisk = 10;
+        if (historyImpulseCnt >= 3) {
+            historyRisk = 80;
+            reasons.push(`Past ${cat} purchases show a frequent pattern of impulse buying.`);
+        } else if (historyImpulseCnt >= 1) {
+            historyRisk = 50;
+            reasons.push(`Mixed purchasing history in the ${cat} category.`);
+        } else {
+            historyRisk = 10;
+        }
+
+        // --- CALCULATE TOTAL WEIGHTED REGRET SCORE (0–100) ---
+        const rawRegretScore = Math.round(
+            (0.25 * incomeRisk) +
+            (0.20 * categoryRisk) +
+            (0.15 * moodRisk) +
+            (0.15 * impulseRisk) +
+            (0.15 * goalRisk) +
+            (0.10 * historyRisk)
+        );
+        const regretScore = Math.min(100, Math.max(0, rawRegretScore));
+
+        // Determine Risk Level & Emojis
+        let riskLevel = 'Low risk 🟢';
+        let recommendationText = 'This purchase fits well within your financial habits and goals.';
+        let predictionText = "You're likely to enjoy this purchase.";
+
+        if (regretScore > 80) {
+            riskLevel = 'Very high risk 🔴';
+            predictionText = 'You will regret this purchase.'; // VALIDATION RULE: ONLY DISPLAYED IF REGRET SCORE > 80!
+            recommendationText = 'Strong warning: High probability of post-purchase regret! We strongly advise against proceeding.';
+        } else if (regretScore >= 61) {
+            riskLevel = 'High risk 🟠';
+            predictionText = "High chance of post-purchase regret.";
+            recommendationText = 'Re-evaluate if this item is a true necessity before buying.';
+        } else if (regretScore >= 31) {
+            riskLevel = 'Moderate risk 🟡';
+            predictionText = "Moderate risk of impulse regret.";
+            recommendationText = 'Consider waiting 24 hours before buying to avoid potential impulse regret.';
+        } else {
+            riskLevel = 'Low risk 🟢';
+            predictionText = "Low risk. Purchase aligns with your budget.";
+            recommendationText = 'This purchase fits well within your financial habits and goals.';
+        }
 
         res.json({
-            prediction,
-            average_satisfaction: avgSatisfaction,
-            explanation,
+            regret_score: regretScore,
+            score: regretScore,
+            risk_level: riskLevel,
+            prediction: predictionText,
+            reasons: reasons,
+            explanation: reasons.join(' '),
+            goal_delay: goalDelayText,
+            recommendation: recommendationText,
+            components: {
+                income_risk: incomeRisk,
+                category_risk: categoryRisk,
+                mood_risk: moodRisk,
+                impulse_risk: impulseRisk,
+                goal_risk: goalRisk,
+                history_risk: historyRisk
+            },
             currency
+        });
+
+    } catch (err) {
+        console.error('[Regret Predictor Engine Error]:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Learning System Feedback Endpoint
+router.post('/purchase-feedback', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { expense_id, purchase_title, regret_score, feedback } = req.body;
+        
+        if (!['Yes', 'Neutral', 'No'].includes(feedback)) {
+            return res.status(400).json({ error: "Feedback must be 'Yes', 'Neutral', or 'No'." });
+        }
+
+        const result = await db.query(`
+            INSERT INTO purchase_feedback (user_id, expense_id, purchase_title, regret_score, feedback)
+            VALUES (?, ?, ?, ?, ?)
+        `, [userId, expense_id || null, purchase_title || 'Purchase', regret_score || 50, feedback]);
+
+        res.json({
+            message: "Thank you for your feedback! This feedback is stored to tune future regret predictions.",
+            id: result.id
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

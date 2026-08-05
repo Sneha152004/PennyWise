@@ -377,17 +377,41 @@
                 <div class="glass-card">
                     <div class="card-header">
                         <div class="card-title">💀 Regret Predictor</div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Behavioral score-based regret engine calculating financial, mood & goal risks.</p>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Item Name</label>
+                            <input type="text" class="form-control" id="rp-item" placeholder="e.g. Gaming Chair">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Price</label>
+                            <input type="number" class="form-control" id="rp-price" placeholder="e.g. 500">
+                        </div>
                     </div>
-                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Predicts 7-day purchase satisfaction based on past behavior.</p>
-                    <div class="form-group">
-                        <label>Item / Store</label>
-                        <input type="text" class="form-control" id="rp-item" placeholder="e.g. Amazon Shopping">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Category</label>
+                            <select class="form-control" id="rp-category">
+                                <option value="Shopping">Shopping</option>
+                                <option value="Food & Groceries">Food & Groceries</option>
+                                <option value="Dining & Drinks">Dining & Drinks</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Utilities">Utilities</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Current Mood</label>
+                            <select class="form-control" id="rp-mood">
+                                <option value="Neutral">Neutral 😐</option>
+                                <option value="Happy">Happy 😊</option>
+                                <option value="Excited">Excited 🤩</option>
+                                <option value="Bored">Bored 🥱</option>
+                                <option value="Stressed">Stressed 🤯</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Estimated Price</label>
-                        <input type="number" class="form-control" id="rp-price" placeholder="e.g. 320">
-                    </div>
-                    <button class="btn btn-secondary" style="width:100%;" onclick="runRegretPredictor()"><i class="fa-solid fa-crystal-ball"></i> Predict Regret Risk</button>
+                    <button class="btn btn-secondary" style="width:100%;" onclick="runRegretPredictor()"><i class="fa-solid fa-brain"></i> Calculate Regret Risk Score</button>
                     <div id="rp-result" class="feature-box" style="margin-top:16px; display:none;"></div>
                 </div>
 

@@ -40,14 +40,27 @@ describe('AI Behavior Suite & Features Unit Tests', () => {
         expect(res.body).toHaveProperty('explanation');
     });
 
-    test('2. Regret Predictor Analysis', async () => {
+    test('2. Score-Based Regret Predictor & Purchase Feedback Learning Loop', async () => {
         const res = await request(app)
             .post('/api/ai/predict-regret')
             .set('Authorization', `Bearer ${token}`)
-            .send({ item_name: 'Fast Food Dinner', category: 'Dining & Drinks', price: 45 });
+            .send({ item_name: 'Gaming Chair', category: 'Shopping', price: 500, mood: 'Stressed' });
         expect(res.statusCode).toBe(200);
-        expect(res.body).toHaveProperty('prediction');
-        expect(res.body).toHaveProperty('average_satisfaction');
+        expect(res.body).toHaveProperty('regret_score');
+        expect(typeof res.body.regret_score).toBe('number');
+        expect(res.body).toHaveProperty('risk_level');
+        expect(res.body).toHaveProperty('reasons');
+        expect(Array.isArray(res.body.reasons)).toBe(true);
+        expect(res.body).toHaveProperty('goal_delay');
+        expect(res.body).toHaveProperty('recommendation');
+
+        // Test Purchase Feedback Learning System
+        const fbRes = await request(app)
+            .post('/api/ai/purchase-feedback')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ purchase_title: 'Gaming Chair', regret_score: res.body.regret_score, feedback: 'No' });
+        expect(fbRes.statusCode).toBe(200);
+        expect(fbRes.body).toHaveProperty('message');
     });
 
     test('3. Opportunity Cost Calculator', async () => {

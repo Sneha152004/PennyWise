@@ -142,6 +142,19 @@ async function initDb() {
             )
         `);
 
+        await query(`
+            CREATE TABLE IF NOT EXISTS purchase_feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                expense_id INTEGER,
+                purchase_title TEXT,
+                regret_score INTEGER,
+                feedback TEXT CHECK(feedback IN ('Yes', 'Neutral', 'No')),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+
         // Verify subscriptions schema
         const pragmaInfo = await query(`PRAGMA table_info(subscriptions)`);
         const colNames = pragmaInfo.map(c => c.name);

@@ -889,23 +889,85 @@ async function runShouldIBuyIt() {
 }
 
 async function runRegretPredictor() {
-    const item = document.getElementById('rp-item').value || 'Amazon Shopping';
-    const price = document.getElementById('rp-price').value || 320;
+    const itemInput = document.getElementById('rp-item');
+    const priceInput = document.getElementById('rp-price');
+    const catInput = document.getElementById('rp-category');
+    const moodInput = document.getElementById('rp-mood');
+
+    const item = itemInput && itemInput.value ? itemInput.value.trim() : 'Gaming Chair';
+    const price = priceInput && priceInput.value ? parseFloat(priceInput.value) : 500;
+    const category = catInput ? catInput.value : 'Shopping';
+    const mood = moodInput ? moodInput.value : 'Stressed';
 
     const res = await fetchWithAuth('/api/ai/predict-regret', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item_name: item, price })
+        body: JSON.stringify({ item_name: item, price, category, mood })
     });
     const data = await res.json();
     if (data.currency) currentCurrency = data.currency;
 
     const box = document.getElementById('rp-result');
     box.style.display = 'block';
+
+    let riskColor = 'var(--accent-green)';
+    if (data.regret_score > 80) riskColor = 'var(--accent-red)';
+    else if (data.regret_score >= 61) riskColor = '#f97316';
+    else if (data.regret_score >= 31) riskColor = 'var(--accent-yellow)';
+
     box.innerHTML = `
-        <h4 style="color:var(--accent-red);">${data.prediction}</h4>
-        <p>${data.explanation}</p>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-glass); padding-bottom:10px; margin-bottom:12px;">
+            <div>
+                <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">REGRET RISK SCORE</div>
+                <div style="font-size:24px; font-weight:800; color:${riskColor}; margin-top:2px;">
+                    ${data.regret_score}/100
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <span style="font-size:13px; font-weight:800; padding:6px 14px; border-radius:20px; background:rgba(99,102,241,0.15); color:${riskColor}; border:1px solid ${riskColor};">
+                    ${data.risk_level}
+                </span>
+            </div>
+        </div>
+
+        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:8px;">
+            <i class="fa-solid fa-bullseye"></i> Prediction: <span style="color:${riskColor};">${data.prediction}</span>
+        </div>
+
+        <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Calculated Risk Factors:</div>
+        <ul style="margin-left:18px; font-size:12px; color:var(--text-main); line-height:1.6; margin-bottom:12px;">
+            ${(data.reasons || []).map(r => `<li>${r}</li>`).join('')}
+        </ul>
+
+        <div style="background:rgba(6,182,212,0.12); border:1px solid var(--accent-cyan); padding:10px 12px; border-radius:var(--radius-sm); font-size:12px; margin-bottom:14px; color:var(--text-main);">
+            <strong>💡 Recommendation:</strong> ${data.recommendation}
+        </div>
+
+        <!-- Learning System 7-Day Feedback Prompt -->
+        <div style="border-top:1px dashed var(--border-glass); padding-top:10px;">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700; margin-bottom:6px;">LEARNING SYSTEM: Do you think this purchase was worth it?</div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1; font-size:11px; padding:4px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'Yes')">🟢 Yes</button>
+                <button class="btn btn-secondary" style="flex:1; font-size:11px; padding:4px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'Neutral')">🟡 Neutral</button>
+                <button class="btn btn-secondary" style="flex:1; font-size:11px; padding:4px;" onclick="submitPurchaseFeedback('${item}', ${data.regret_score}, 'No')">🔴 No</button>
+            </div>
+            <div id="rp-feedback-msg" style="font-size:11px; color:var(--accent-green); font-weight:700; margin-top:6px; display:none;"></div>
+        </div>
     `;
+}
+
+async function submitPurchaseFeedback(title, score, feedbackVal) {
+    const res = await fetchWithAuth('/api/ai/purchase-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ purchase_title: title, regret_score: score, feedback: feedbackVal })
+    });
+    const data = await res.json();
+    const msgBox = document.getElementById('rp-feedback-msg');
+    if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.innerText = `✓ Feedback recorded (${feedbackVal}). Learning engine updated!`;
+    }
 }
 
 async function runOpportunityCost() {

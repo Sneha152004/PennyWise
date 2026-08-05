@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PennyWise - Intelligent Financial Behavior Platform</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/logo.png">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dream-map.css">
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="/images/logo.png" alt="PennyWise Logo" class="brand-logo-img" style="width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid var(--primary); box-shadow: 0 4px 15px var(--primary-glow);">
+            <div class="brand-title-wrap"><span class="brand-title">PennyWise</span></div>
+        </div>
+
+        <nav class="nav-group">
+            <a href="#" class="nav-link active" data-target="sec-dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a href="#" class="nav-link" data-target="sec-profile"><i class="fa-solid fa-id-card"></i> Profile & Deductions</a>
+            <a href="#" class="nav-link" data-target="sec-ai-suite"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Behavior Suite</a>
+            <a href="#" class="nav-link" data-target="sec-analytics"><i class="fa-solid fa-chart-line"></i> Analytics & Mood</a>
+            <a href="#" class="nav-link" data-target="sec-calendar"><i class="fa-solid fa-calendar-days"></i> No-Spend Calendar</a>
+            <a href="#" class="nav-link" data-target="sec-goals"><i class="fa-solid fa-bullseye"></i> Dream Goals</a>
+
+            <a href="#" class="nav-link" data-target="sec-gamification"><i class="fa-solid fa-gamepad"></i> Money Game & XP</a>
+            <a href="#" class="nav-link" data-target="sec-subscriptions"><i class="fa-solid fa-fire"></i> Subscription Killer</a>
+        </nav>
+
+        <!-- Sidebar User Widget -->
+        <div class="sidebar-user-widget">
+            <div class="user-level-row">
+                <span id="user-level-name"><i class="fa-solid fa-crown text-yellow-400"></i> Money Master</span>
+                <span id="user-xp-label">480 XP</span>
+            </div>
+            <div class="xp-bar-bg">
+                <div class="xp-bar-fill" id="user-xp-fill" style="width: 80%;"></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="page-title">
+                <div style="display:flex; align-items:center; gap:14px; margin-bottom:4px; flex-wrap:wrap;">
+                    <h1 id="header-heading" style="margin-bottom:0;">Dashboard Overview</h1>
+                    <div id="live-date-time-widget" style="font-size:12px; font-weight:600; color:var(--primary); background:rgba(99,102,241,0.12); padding:4px 12px; border-radius:20px; border:1px solid var(--border-glow); display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-clock"></i> <span id="dashboard-live-clock">Loading date & time...</span>
+                    </div>
+                </div>
+                <p id="header-sub">Behavioral insights & AI personal finance management</p>
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-secondary" id="btn-user-auth" onclick="openAuthModal()"><i class="fa-solid fa-user-gear"></i> <span id="auth-btn-label">Login / Account</span></button>
+                <button class="btn btn-secondary" onclick="generateMonthlyReport()"><i class="fa-solid fa-file-pdf"></i> Monthly Report</button>
+                <button class="btn btn-secondary" id="btn-quick-expense" onclick="openModal('modal-add-expense')"><i class="fa-solid fa-plus"></i> Add Expense</button>
+                <button class="btn btn-secondary" id="btn-impulse-lock" onclick="openImpulseLock()"><i class="fa-solid fa-shield-halved"></i> Impulse Lock</button>
+                <button class="btn btn-danger" onclick="logoutUser()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </header>
+
+
+
+        <!-- SECTION 1: DASHBOARD (AI FINANCIAL COMMAND CENTER) -->
+        <section id="sec-dashboard" class="app-section active" style="position:relative;">
+            <!-- Animated Particle Background Canvas -->
+            <canvas id="dashboard-particles-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; opacity:0.35;"></canvas>
+
+            <div style="position:relative; z-index:1;">
+                <!-- Personalized Command Greeting Banner -->
+                <div class="glass-card" style="margin-bottom:20px; padding:20px 24px; background: linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(168,85,247,0.12) 100%); border-left:5px solid var(--primary); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                    <div>
+                        <h2 id="dash-personalized-greeting" style="font-size:24px; font-weight:800; margin-bottom:4px; background: linear-gradient(90deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Good evening, Alex 👋</h2>
+                        <p style="font-size:13px; color:var(--text-muted); margin:0;">AI Financial Command Center & Real-Time Intelligence Matrix</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span id="dash-health-score-badge" class="health-score-badge" style="font-size:14px; font-weight:800; padding:8px 18px; border-radius:30px; background:rgba(16,185,129,0.18); color:#10b981; border:1.5px solid #10b981; box-shadow: 0 4px 15px rgba(16,185,129,0.2);">
+                            🟢 85/100 — Excellent
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Animated Net-Worth & Command KPI Cards -->
+                <div class="grid-4" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:20px;">
+                    <div class="glass-card kpi-card animated-networth-card" style="position:relative; overflow:hidden;">
+                        <div class="kpi-icon income"><i class="fa-solid fa-wallet"></i></div>
+                        <div>
+                            <div class="kpi-label">Gross Income</div>
+                            <div class="kpi-value" id="kpi-income">₹5,200.00</div>
+                        </div>
+                    </div>
+                    <div class="glass-card kpi-card animated-networth-card">
+                        <div class="kpi-icon expense"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                        <div>
+                            <div class="kpi-label">Fixed Deductions</div>
+                            <div class="kpi-value" id="kpi-deductions" style="color:var(--accent-yellow);">₹1,300.00</div>
+                        </div>
+                    </div>
+                    <div class="glass-card kpi-card animated-networth-card">
+                        <div class="kpi-icon savings"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                        <div>
+                            <div class="kpi-label">Net Take-Home Pay</div>
+                            <div class="kpi-value" id="kpi-takehome" style="color:var(--primary);">₹3,900.00</div>
+                        </div>
+                    </div>
+                    <div class="glass-card kpi-card animated-networth-card">
+                        <div class="kpi-icon net-savings-icon"><i class="fa-solid fa-piggy-bank"></i></div>
+                        <div>
+                            <div class="kpi-label">Net Monthly Savings</div>
+                            <div class="kpi-value" id="kpi-savings" style="color:var(--accent-green);">₹2,100.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 MAIN DASHBOARD SECTIONS & COMMAND CENTER GRID -->
+                <div class="grid-2" style="margin-bottom:20px;">
+
+                    <!-- SECTION 1: FINANCIAL HEALTH SCORE -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-heart-pulse" style="color:#10b981;"></i> Financial Health Score</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin:14px 0;">
+                            <!-- Dynamic Ring Meter -->
+                            <div style="position:relative; width:110px; height:110px; flex-shrink:0;">
+                                <svg width="110" height="110" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+                                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-inner)" stroke-width="3.5" />
+                                    <path id="dash-health-ring-path" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-width="3.5" stroke-dasharray="85, 100" stroke-linecap="round" />
+                                </svg>
+                                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center;">
+                                    <div id="dash-health-score-val" style="font-size:22px; font-weight:800; color:var(--text-main);">85</div>
+                                    <div style="font-size:9px; color:var(--text-muted); text-transform:uppercase;">Out of 100</div>
+                                </div>
+                            </div>
+                            <div style="flex:1;">
+                                <div id="dash-health-status-badge" style="font-size:14px; font-weight:800; color:#10b981; margin-bottom:8px;">🟢 85/100 — Excellent</div>
+                                <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin:0;">
+                                    Calculated using savings rate, impulse frequency, expense-to-income ratio, goal progress, and mood stability.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: MONTHLY SPENDING TREND & WEEKLY GRAPH -->
+                    <div class="glass-card">
+                        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="card-title"><i class="fa-solid fa-chart-line" style="color:var(--primary);"></i> Monthly Spending Trend</div>
+                            <span id="dash-spending-month-header" style="font-size:12px; font-weight:700; color:var(--text-muted); background:var(--bg-inner); padding:3px 10px; border-radius:12px; border:1px solid var(--border-glass);">August 2026</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; background:var(--bg-inner); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-glass);">
+                            <div>
+                                <div style="font-size:11px; color:var(--text-muted); font-weight:700;">THIS MONTH</div>
+                                <div id="dash-spending-this-month" style="font-size:16px; font-weight:800; color:var(--accent-red);">₹0.00</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px; color:var(--text-muted); font-weight:700;">LAST MONTH</div>
+                                <div id="dash-spending-last-month" style="font-size:16px; font-weight:800; color:var(--text-muted);">₹0.00</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:11px; color:var(--text-muted); font-weight:700;">CHANGE</div>
+                                <div id="dash-spending-change-pct" style="font-size:13px; font-weight:800; color:#10b981;">First month of usage</div>
+                            </div>
+                        </div>
+                        <div style="height:110px;">
+                            <canvas id="chart-weekly-trend"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-bottom:20px;">
+                    <!-- SECTION 3: LARGEST EXPENSE CATEGORIES -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-tags" style="color:var(--accent-yellow);"></i> Largest Expense Categories</div>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Top category drains for the current month:</p>
+                        <div id="dash-largest-categories-list" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: SPENDING INSIGHTS -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-lightbulb" style="color:var(--accent-cyan);"></i> Spending Insights</div>
+                        </div>
+                        <div id="dash-spending-insights-box" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <!-- RECENT TRANSACTIONS LOG TABLE -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-list-check" style="color:var(--primary);"></i> Recent Transactions</div>
+                            <button class="btn btn-primary" style="font-size:11px; padding:4px 10px;" onclick="openModal('modal-add-expense')"><i class="fa-solid fa-plus"></i> Add</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; font-size:13px;" id="table-expenses">
+                                <thead>
+                                    <tr style="border-bottom:1px solid var(--border-glass); text-align:left; color:var(--text-muted);">
+                                        <th style="padding:10px;">Item</th>
+                                        <th style="padding:10px;">Category</th>
+                                        <th style="padding:10px;">Amount</th>
+                                        <th style="padding:10px;">Date & Time</th>
+                                        <th style="padding:10px;">Mood</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-expenses">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- NEW AI SMART ALERTS WIDGET (DATA-DRIVEN, NO SUBSCRIPTIONS!) -->
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-brain" style="color:var(--primary);"></i> 🤖 AI Smart Alerts</div>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Real-time behavioral alerts generated purely from your financial database activity.</p>
+                        <div id="notifications-container" style="display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: PROFILE, DEDUCTIONS & CURRENCY -->
+        <section id="sec-profile" class="app-section">
+            <div class="grid-2">
+                <!-- Country & Currency Selector Card -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">🌐 Country & Currency Preferences</div>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Select your country to set up localized currency formatting across all financial metrics & AI advice.</p>
+
+                    <div class="form-group">
+                        <label>Select Country & Currency</label>
+                        <select class="form-control" id="profile-country-select" onchange="updateCountryCurrency()">
+                            <option value="United States|$">🇺🇸 United States - USD ($)</option>
+                            <option value="India|₹">🇮🇳 India - INR (₹)</option>
+                            <option value="Eurozone|€">🇪🇺 Eurozone - EUR (€)</option>
+                            <option value="United Kingdom|£">🇬🇧 United Kingdom - GBP (£)</option>
+                            <option value="Canada|$">🇨🇦 Canada - CAD ($)</option>
+                            <option value="Australia|$">🇦🇺 Australia - AUD ($)</option>
+                            <option value="Japan|¥">🇯🇵 Japan - JPY (¥)</option>
+                            <option value="United Arab Emirates|AED">🇦🇪 United Arab Emirates - AED (AED)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Gross Monthly Target Salary / Income</label>
+                        <input type="number" class="form-control" id="profile-target-income" value="5200" placeholder="5200">
+                    </div>
+
+                    <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="saveProfileSettings()"><i class="fa-solid fa-floppy-disk"></i> Save Profile Preferences</button>
+                    <button class="btn btn-danger" style="width:100%; margin-top:8px;" onclick="deleteAccount()"><i class="fa-solid fa-trash"></i> Delete Account & Data</button>
+                </div>
+
+
+                <!-- Financial Take-Home Summary Card -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">💼 Financial Salary Breakdown</div>
+                    </div>
+                    <div style="padding:16px; background:var(--bg-inner); border:1px solid var(--border-glass); border-radius:var(--radius-md);">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;">
+                            <span>Gross Monthly Income:</span>
+                            <strong id="prof-gross-inc" style="color:var(--accent-green);">$5,200.00</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:14px;">
+                            <span>Total Fixed Deductions:</span>
+                            <strong id="prof-total-ded" style="color:var(--accent-yellow);">$2,500.00</strong>
+                        </div>
+                        <hr style="border:0; border-top:1px solid var(--border-glass); margin:12px 0;">
+                        <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:800;">
+                            <span>Net Take-Home Salary:</span>
+                            <strong id="prof-net-home" style="color:var(--primary);">$2,700.00</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deductions Management List & Add Form -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-title">🧾 Fixed Monthly Deductions (Tax, Loans, Rent, Insurance)</div>
+                </div>
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">Add your fixed monthly deductions like Income Tax, Home/Car Loans, Rent, or Insurance to accurately calculate your Net Take-Home Salary.</p>
+
+                <!-- Quick Presets -->
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                    <span style="font-size:12px; color:var(--text-muted); align-self:center; font-weight:600;">Quick Add Presets:</span>
+                    <button class="btn btn-secondary" style="padding:3px 8px; font-size:11px;" onclick="setDeductionPreset('Income Tax', 'Taxes', 500)"><i class="fa-solid fa-file-invoice-dollar"></i> Income Tax</button>
+                    <button class="btn btn-secondary" style="padding:3px 8px; font-size:11px;" onclick="setDeductionPreset('Home Loan EMI', 'EMI & Loan', 800)"><i class="fa-solid fa-house"></i> Home Loan</button>
+                    <button class="btn btn-secondary" style="padding:3px 8px; font-size:11px;" onclick="setDeductionPreset('Car Loan EMI', 'EMI & Loan', 350)"><i class="fa-solid fa-car"></i> Car Loan</button>
+                    <button class="btn btn-secondary" style="padding:3px 8px; font-size:11px;" onclick="setDeductionPreset('House Rent', 'Housing', 1200)"><i class="fa-solid fa-building-user"></i> House Rent</button>
+                    <button class="btn btn-secondary" style="padding:3px 8px; font-size:11px;" onclick="setDeductionPreset('Health Insurance', 'Insurance', 200)"><i class="fa-solid fa-notes-medical"></i> Health Insurance</button>
+                </div>
+
+                <!-- Inline Form -->
+                <div style="background:var(--bg-inner); padding:14px; border-radius:var(--radius-md); margin-bottom:16px; border:1px solid var(--border-glass);">
+                    <div style="font-size:13px; font-weight:700; margin-bottom:8px; color:var(--primary);">➕ Add New Deduction</div>
+                    <div style="display:grid; grid-template-columns: 2fr 1.2fr 1.5fr auto; gap:8px;">
+                        <input type="text" class="form-control" id="profile-ded-title" placeholder="Deduction Name (e.g. Tax, Car Loan)">
+                        <input type="number" class="form-control" id="profile-ded-amount" placeholder="Monthly Amount">
+                        <select class="form-control" id="profile-ded-category">
+                            <option value="Taxes">Taxes & Payroll</option>
+                            <option value="EMI & Loan">EMI & Loan Payment</option>
+                            <option value="Housing">Housing & Rent</option>
+                            <option value="Insurance">Health & Insurance</option>
+                            <option value="Retirement">Retirement & PF</option>
+                            <option value="Other">Other Fixed Expense</option>
+                        </select>
+                        <button class="btn btn-primary" style="font-size:13px; white-space:nowrap;" onclick="submitProfileDeduction()"><i class="fa-solid fa-plus"></i> Add Deduction</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border-glass); text-align:left; color:var(--text-muted);">
+                                <th style="padding:10px;">Deduction Name</th>
+                                <th style="padding:10px;">Category</th>
+                                <th style="padding:10px;">Amount</th>
+                                <th style="padding:10px;">Frequency</th>
+                                <th style="padding:10px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-deductions">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SECTION 3: AI BEHAVIOR SUITE -->
+        <section id="sec-ai-suite" class="app-section">
+            <div class="grid-2">
+                <!-- 1. Should I Buy It Advisor -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">🧠 "Should I Buy It?" Advisor</div>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Evaluates affordability, bills, and impact on your savings goals.</p>
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input type="text" class="form-control" id="sib-name" placeholder="e.g. iPhone 17 Pro">
+                    </div>
+                    <div class="form-group">
+                        <label>Price</label>
+                        <input type="number" class="form-control" id="sib-price" placeholder="e.g. 1200">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;" onclick="runShouldIBuyIt()"><i class="fa-solid fa-robot"></i> Ask AI Advisor</button>
+                    <div id="sib-result" class="feature-box" style="margin-top:16px; display:none;"></div>
+                </div>
+
+                <!-- 2. Regret Predictor -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">💀 Regret Predictor</div>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Predicts 7-day purchase satisfaction based on past behavior.</p>
+                    <div class="form-group">
+                        <label>Item / Store</label>
+                        <input type="text" class="form-control" id="rp-item" placeholder="e.g. Amazon Shopping">
+                    </div>
+                    <div class="form-group">
+                        <label>Estimated Price</label>
+                        <input type="number" class="form-control" id="rp-price" placeholder="e.g. 320">
+                    </div>
+                    <button class="btn btn-secondary" style="width:100%;" onclick="runRegretPredictor()"><i class="fa-solid fa-crystal-ball"></i> Predict Regret Risk</button>
+                    <div id="rp-result" class="feature-box" style="margin-top:16px; display:none;"></div>
+                </div>
+
+                <!-- 13. Opportunity Cost Calculator -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">🍕 Opportunity Cost Calculator</div>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Converts costs into tangible everyday lifestyle equivalents.</p>
+                    <div class="form-group">
+                        <label>Purchase Name & Cost</label>
+                        <input type="text" class="form-control" id="occ-item" placeholder="Coffee (6)">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;" onclick="runOpportunityCost()"><i class="fa-solid fa-calculator"></i> Calculate Cost</button>
+                    <div id="occ-result" class="feature-box" style="margin-top:16px; display:none;"></div>
+                </div>
+
+                <!-- 14. Future Savings Simulator -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">📉 Future Savings Simulator</div>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Simulate spending reduction projections over 1 and 5 years.</p>
+                    <div class="form-group">
+                        <label>Reduce Category Spending By (%): <span id="sim-pct-val" style="color:var(--primary); font-weight:700;">15%</span></label>
+                        <input type="range" min="5" max="50" value="15" style="width:100%;" id="sim-slider" oninput="document.getElementById('sim-pct-val').innerText = this.value + '%'; runFutureSimulator();">
+                    </div>
+                    <div id="sim-result" class="feature-box" style="margin-top:16px;"></div>
+                </div>
+
+                <!-- 21. Financial Time Machine -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">⏱️ Financial Time Machine</div>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Visualizes what saved habit money turns into over months & years.</p>
+                    <div class="form-group">
+                        <label>Monthly Saved Amount</label>
+                        <input type="number" class="form-control" id="tm-amount" value="120" oninput="runTimeMachine()">
+                    </div>
+                    <div id="tm-result" class="feature-box" style="margin-top:16px;"></div>
+                </div>
+
+                <!-- 7. Personalized AI Financial Coach Chat -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">🤖 AI Financial Coach</div>
+                    </div>
+                    <div id="chat-messages" style="height:180px; overflow-y:auto; background:var(--bg-inner); border:1px solid var(--border-glass); padding:12px; border-radius:var(--radius-md); font-size:13px; margin-bottom:12px;">
+                        <div style="color:var(--primary); margin-bottom:8px;"><strong>Coach:</strong> Hello! I notice your monthly income and fixed deductions. Cooking at home twice a week could save extra money. How can I assist?</div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" class="form-control" id="chat-input" placeholder="Ask financial advice...">
+                        <button class="btn btn-primary" onclick="sendCoachMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: ANALYTICS & MOOD -->
+        <section id="sec-analytics" class="app-section">
+            <!-- Month & Year Selector Header Bar -->
+            <div class="glass-card" style="margin-bottom:20px; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-calendar-days text-indigo-400" style="font-size:22px;"></i>
+                    <div>
+                        <div style="font-size:16px; font-weight:800;" id="analytics-month-title-display">Analytics & Monthly Report</div>
+                        <div style="font-size:12px; color:var(--text-muted);">Select a month to filter analytics, mood graphs, expense lists, and PDF report downloads.</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <!-- Roll Down Month Selector with Month Names -->
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <label style="font-size:12px; font-weight:700; color:var(--text-muted);">Month:</label>
+                        <select id="analytics-month-select" class="form-control" style="width:130px; font-weight:800; cursor:pointer;" onchange="onAnalyticsMonthChange()">
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+
+                    <!-- Typed Year Input -->
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <label style="font-size:12px; font-weight:700; color:var(--text-muted);">Year:</label>
+                        <input type="number" id="analytics-year-num" class="form-control" style="width:90px; font-weight:800; text-align:center;" min="2000" max="2100" placeholder="YYYY" onchange="onAnalyticsMonthChange()" oninput="onAnalyticsMonthChange()">
+                    </div>
+
+                    <!-- Download PDF Report Button -->
+                    <button class="btn btn-primary" style="font-size:13px; padding:8px 16px; font-weight:800;" onclick="downloadSelectedMonthPdf()"><i class="fa-solid fa-file-pdf"></i> Download PDF Report</button>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Category Expense & Deduction Breakdown</div>
+                    </div>
+                    <div style="height:280px;">
+                        <canvas id="chart-category"></canvas>
+                    </div>
+                </div>
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">🧠 Mood vs Spending Analysis</div>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Insight: <strong>You spend 2.8x more when stressed.</strong></p>
+                    <div style="height:240px;">
+                        <canvas id="chart-mood"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Log Table in Analytics Module -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fa-solid fa-receipt" style="color:var(--primary);"></i> Logged Expenses</div>
+                    <button class="btn btn-primary" style="font-size:12px; padding:6px 14px;" onclick="openModal('modal-add-expense')"><i class="fa-solid fa-plus"></i> Add New Expense</button>
+                </div>
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">All logged expenses contributing directly to your category breakdown graph.</p>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border-glass); text-align:left; color:var(--text-muted);">
+                                <th style="padding:10px;">Item / Title</th>
+                                <th style="padding:10px;">Category</th>
+                                <th style="padding:10px;">Amount</th>
+                                <th style="padding:10px;">Date & Time</th>
+                                <th style="padding:10px;">Mood</th>
+                                <th style="padding:10px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-analytics-expenses">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: NO SPEND CALENDAR -->
+        <section id="sec-calendar" class="app-section">
+            <div class="glass-card">
+                <div class="card-header" style="flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div class="card-title">📅 No-Spend Calendar & Streaks</div>
+                        <p style="font-size:13px; color:var(--text-muted); margin-top:2px;">Green = $0 spent. Red = Money spent. Click any date for daily itemized breakdown.</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span id="cal-month-year-label" style="font-weight:700; font-size:14px; min-width:120px; text-align:center;">August 2026</span>
+                        <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid #10b981; padding:4px 10px; border-radius:12px; font-weight:700; font-size:12px;"><i class="fa-solid fa-calendar-check"></i> Current Month</span>
+                    </div>
+                </div>
+
+                <!-- Live Monthly Stats Bar -->
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin:16px 0;">
+                    <div style="background:var(--bg-inner); border:1px solid var(--border-glass); padding:10px 14px; border-radius:var(--radius-md); text-align:center;">
+                        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">No-Spend Streak</div>
+                        <div style="font-size:18px; font-weight:800; color:var(--accent-green);" id="cal-stat-streak">🔥 0 Days</div>
+                    </div>
+                    <div style="background:var(--bg-inner); border:1px solid var(--border-glass); padding:10px 14px; border-radius:var(--radius-md); text-align:center;">
+                        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">No-Spend Days</div>
+                        <div style="font-size:18px; font-weight:800; color:var(--accent-green);" id="cal-stat-nospend">🟢 0 Days</div>
+                    </div>
+                    <div style="background:var(--bg-inner); border:1px solid var(--border-glass); padding:10px 14px; border-radius:var(--radius-md); text-align:center;">
+                        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Spend Days</div>
+                        <div style="font-size:18px; font-weight:800; color:var(--accent-red);" id="cal-stat-spend">🔴 0 Days</div>
+                    </div>
+                    <div style="background:var(--bg-inner); border:1px solid var(--border-glass); padding:10px 14px; border-radius:var(--radius-md); text-align:center;">
+                        <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Total Outflow</div>
+                        <div style="font-size:18px; font-weight:800; color:var(--primary);" id="cal-stat-total">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="calendar-grid" id="no-spend-calendar-grid">
+                    <!-- Dynamic calendar view -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: DREAM GOALS & CLASH OF CLANS JOURNEY MAP -->
+        <section id="sec-goals" class="app-section">
+            <!-- 1. Add New Dream Goal Form Card -->
+            <div class="glass-card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <div class="card-title"><i class="fa-solid fa-map-location-dot" style="color:var(--primary);"></i> Create New Clash-of-Clans Dream Journey Goal</div>
+                </div>
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Transform money savings into an interactive RPG game map! Choose a theme to generate your progression path.</p>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:16px;">
+                    <!-- Goal Name -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Goal Name</label>
+                        <input type="text" class="form-control" id="goal-title-input" placeholder="e.g. Tokyo Trip, Dream Villa, Supercar">
+                    </div>
+
+                    <!-- LEVEL 1: GOAL CATEGORY -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Goal Category</label>
+                        <select class="form-control" id="goal-category-select" onchange="onGoalCategoryChange()">
+                            <option value="travel">✈️ Travel</option>
+                            <option value="medical">🏥 Medical & Wellness</option>
+                            <option value="house">🏠 Dream House</option>
+                            <option value="vehicle">🚗 Vehicle</option>
+                            <option value="gaming">🎮 Gaming Setup</option>
+                            <option value="education">🎓 Higher Education</option>
+                            <option value="wedding">💍 Wedding</option>
+                            <option value="emergency">🛡️ Emergency Fund</option>
+                        </select>
+                    </div>
+
+                    <!-- LEVEL 2: TRAVEL DESTINATION (Searchable & Grouped by Region) -->
+                    <div class="form-group" id="travel-destination-box" style="margin-bottom:0;">
+                        <label>LEVEL 2: Travel Destinations</label>
+                        <input type="text" class="search-filter-input" id="destination-search-input" placeholder="🔍 Search Destination (e.g., Tokyo, Goa, Paris)..." oninput="filterDestinationOptions()">
+                        <select class="form-control" id="goal-destination-select" onchange="onTravelDestinationChange()">
+                            <!-- Dynamically populated from TRAVEL_DESTINATIONS_DATA -->
+                        </select>
+                    </div>
+
+                    <!-- CUSTOM DESTINATION TEXT INPUT (Triggered when "Other Destination" selected) -->
+                    <div class="form-group custom-destination-field" id="custom-destination-box" style="margin-bottom:0; display:none;">
+                        <label style="color:#0ea5e9;"><i class="fa-solid fa-earth-americas"></i> Enter Custom Destination</label>
+                        <input type="text" class="form-control" id="goal-custom-destination-input" placeholder="e.g. Antarctica, Mount Everest, Kyoto Grove" style="border-color:#0ea5e9;">
+                    </div>
+
+                    <!-- Total Target Budget -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Total Target Budget</label>
+                        <input type="number" class="form-control" id="goal-target-input" placeholder="e.g. 5000">
+                    </div>
+                    <!-- Initial Amount Saved -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Initial Amount Saved</label>
+                        <input type="number" class="form-control" id="goal-current-input" placeholder="e.g. 1000" value="0">
+                    </div>
+                    <!-- Target Date -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Target Date (Optional)</label>
+                        <input type="date" class="form-control" id="goal-date-input">
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="width:100%; font-weight:700;" onclick="addDreamGoal()"><i class="fa-solid fa-wand-magic-sparkles"></i> Launch Dream Journey Map</button>
+            </div>
+
+            <!-- 2. Active Dream Journey Maps Container -->
+            <div id="goals-container">
+                <!-- Clash of Clans Journey Maps rendered dynamically -->
+            </div>
+        </section>
+
+
+        <!-- SECTION 7: MONEY GAME & GAMIFICATION -->
+        <section id="sec-gamification" class="app-section">
+            <div class="glass-card" style="margin-bottom:24px;">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="card-title"><i class="fa-solid fa-trophy text-yellow-400"></i> Money Game, Overall Badges & XP Level</div>
+                    <span id="gamification-level-badge" class="badge" style="background:var(--primary); font-size:12px; font-weight:800;"><i class="fa-solid fa-shield-halved"></i> Penny Beginner</span>
+                </div>
+                <div class="badge-grid" id="badges-container">
+                    <!-- Badges populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Custom Daily Missions Card -->
+            <div class="glass-card">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div class="card-title"><i class="fa-solid fa-bullseye text-indigo-400"></i> Today's Daily Savings Missions</div>
+                    <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary); font-size:12px; font-weight:700;"><i class="fa-solid fa-clock-rotate-left"></i> Resets Daily at Midnight</span>
+                </div>
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Set your own daily financial missions. Missions are active for today and automatically reset on the next day! Completing missions awards XP and unlocks overall badges above.</p>
+
+                <!-- Set Custom Mission Inline Form -->
+                <div style="background:var(--bg-inner); padding:16px; border-radius:var(--radius-md); margin-bottom:20px; border:1px solid var(--border-glass);">
+                    <div style="font-size:13px; font-weight:800; margin-bottom:10px; color:var(--primary);"><i class="fa-solid fa-plus-circle"></i> Set Custom Daily Mission</div>
+                    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <input type="text" class="form-control" id="custom-mission-title" placeholder="Mission Name (e.g. Skip Buying Coffee Today)">
+                        <input type="number" class="form-control" id="custom-mission-savings" placeholder="Savings Goal ($)" value="15">
+                        <select class="form-control" id="custom-mission-xp">
+                            <option value="40">+40 XP (Easy)</option>
+                            <option value="50" selected>+50 XP (Medium)</option>
+                            <option value="75">+75 XP (Hard)</option>
+                            <option value="100">+100 XP (Epic)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%; font-weight:800; font-size:13px;" onclick="addCustomDailyMission()"><i class="fa-solid fa-flag"></i> Add Daily Mission</button>
+                </div>
+
+                <div id="challenges-container">
+                    <!-- Challenges populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 8: SUBSCRIPTION KILLER & PRICE WATCH -->
+        <section id="sec-subscriptions" class="app-section">
+            <div class="grid-2">
+                <!-- 1. Subscription Killer & Add Subscription -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-title">🔥 Subscription Killer</div>
+                    </div>
+                    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">Track subscriptions, monitor usage streaks, and remove unwanted services to boost monthly savings.</p>
+
+                    <!-- Add Subscription Inline Form -->
+                    <div style="background:var(--bg-inner); padding:16px; border-radius:var(--radius-md); margin-bottom:16px; border:1px solid var(--border-glass);">
+                        <div style="font-size:13px; font-weight:700; margin-bottom:10px; color:var(--primary);"><i class="fa-solid fa-plus-circle"></i> Add New Subscription</div>
+                        <div style="display:grid; grid-template-columns: 1.5fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+                            <input type="text" class="form-control" id="sub-name-input" placeholder="Service Name (e.g. Netflix)">
+                            <select class="form-control" id="sub-category-select">
+                                <option value="Entertainment">🎬 Entertainment</option>
+                                <option value="Music">🎵 Music</option>
+                                <option value="Gaming">🎮 Gaming</option>
+                                <option value="Education">🎓 Education</option>
+                                <option value="Productivity">⚡ Productivity</option>
+                                <option value="Fitness">🏋️ Fitness</option>
+                                <option value="Other">📦 Other</option>
+                            </select>
+                            <input type="number" class="form-control" id="sub-cost-input" placeholder="Monthly Cost">
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
+                            <div>
+                                <label style="font-size:11px; color:var(--text-muted);">Renewal Date</label>
+                                <input type="date" class="form-control" id="sub-renewal-input">
+                            </div>
+                            <div>
+                                <label style="font-size:11px; color:var(--text-muted);">Last Used Date</label>
+                                <input type="date" class="form-control" id="sub-lastused-input">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" style="width:100%; font-size:13px;" onclick="addSubscription()"><i class="fa-solid fa-plus"></i> Add Subscription</button>
+                    </div>
+
+                    <!-- Savings Notification Alert Box -->
+                    <div id="sub-savings-alert" class="feature-box" style="display:none; background:rgba(16,185,129,0.15); border-left:3px solid var(--accent-green); margin-bottom:16px;"></div>
+
+                    <div id="subs-container">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- 2. Savings Opportunities & Hidden Expenses Engine (Tabbed View) -->
+                <div class="glass-card">
+                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                        <div class="card-title"><i class="fa-solid fa-piggy-bank text-emerald-400"></i> Savings & Hidden Expenses Engine</div>
+                        <span class="badge" style="background:rgba(16,185,129,0.2); color:var(--accent-green); font-size:12px; font-weight:800; border:1px solid rgba(16,185,129,0.4);" id="potential-savings-badge">
+                            Potential Savings: Loading...
+                        </span>
+                    </div>
+
+                    <!-- 3 Swipeable / Clickable Tabs Navigation -->
+                    <div style="display:flex; background:var(--bg-inner); border:1px solid var(--border-glass); padding:4px; border-radius:var(--radius-md); margin-bottom:16px;">
+                        <button id="tab-btn-leaks" class="btn active-sub-tab" style="flex:1; padding:8px; font-size:12px; font-weight:800; border-radius:var(--radius-sm);" onclick="switchSavingsTab('leaks')">
+                            💸 Money Leaks
+                        </button>
+                        <button id="tab-btn-opps" class="btn inactive-sub-tab" style="flex:1; padding:8px; font-size:12px; font-weight:800; border-radius:var(--radius-sm);" onclick="switchSavingsTab('opps')">
+                            💡 Savings Opportunities
+                        </button>
+                        <button id="tab-btn-coach" class="btn inactive-sub-tab" style="flex:1; padding:8px; font-size:12px; font-weight:800; border-radius:var(--radius-sm);" onclick="switchSavingsTab('coach')">
+                            🤖 AI Coach
+                        </button>
+                    </div>
+
+                    <div id="savings-opportunities-container">
+                        <!-- Populated dynamically based on active tab -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: LOGIN / REGISTER AUTH MODAL -->
+    <div class="modal-overlay" id="modal-auth">
+        <div class="modal-card" style="text-align:left;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 id="auth-modal-title" style="display:flex; align-items:center; gap:10px;"><img src="/images/logo.png" style="width:32px; height:32px; border-radius:50%;"> Account Login</h3>
+                <button style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;" onclick="closeModal('modal-auth')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="form-login-box">
+                <div style="background:rgba(99,102,241,0.15); border:1px solid var(--border-glow); padding:10px 14px; border-radius:var(--radius-md); font-size:12px; margin-bottom:14px; color:#a5b4fc;">
+                    <i class="fa-solid fa-circle-info"></i> <strong>Demo Credentials:</strong><br>
+                    Email: <code>alex@finpilot.ai</code> | Password: <code>password123</code>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" id="login-email" value="alex@finpilot.ai">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" id="login-password" value="password123">
+                </div>
+                <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="submitLogin()"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+                <div style="display:flex; justify-content:space-between; margin-top:14px; font-size:12px;">
+                    <a href="#" onclick="submitForgotPassword()" style="color:var(--accent-yellow);"><i class="fa-solid fa-key"></i> Forgot password?</a>
+                    <a href="#" onclick="toggleAuthForm('register')" style="color:var(--primary);">Register here</a>
+                </div>
+
+            </div>
+
+            <!-- Register Form -->
+            <div id="form-register-box" style="display:none;">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" class="form-control" id="reg-name" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" class="form-control" id="reg-email" placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control" id="reg-password" placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label>Country & Currency</label>
+                    <select class="form-control" id="reg-country">
+                        <option value="United States|$">🇺🇸 United States - USD ($)</option>
+                        <option value="India|₹">🇮🇳 India - INR (₹)</option>
+                        <option value="Eurozone|€">🇪🇺 Eurozone - EUR (€)</option>
+                        <option value="United Kingdom|£">🇬🇧 United Kingdom - GBP (£)</option>
+                        <option value="Canada|$">🇨🇦 Canada - CAD ($)</option>
+                        <option value="Australia|$">🇦🇺 Australia - AUD ($)</option>
+                        <option value="Japan|¥">🇯🇵 Japan - JPY (¥)</option>
+                        <option value="United Arab Emirates|AED">🇦🇪 United Arab Emirates - AED (AED)</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="submitRegister()"><i class="fa-solid fa-user-plus"></i> Create Account</button>
+                <p style="text-align:center; font-size:13px; color:var(--text-muted); margin-top:14px;">Already have an account? <a href="#" onclick="toggleAuthForm('login')" style="color:var(--primary);">Login here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD DEDUCTION MODAL -->
+    <div class="modal-overlay" id="modal-add-deduction">
+        <div class="modal-card" style="text-align:left;">
+            <h3>➕ Add Fixed Monthly Deduction</h3>
+            <div class="form-group" style="margin-top:16px;">
+                <label>Deduction Title</label>
+                <input type="text" class="form-control" id="ded-title" placeholder="e.g. Income Tax, Health Insurance, Rent">
+            </div>
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="number" class="form-control" id="ded-amount" placeholder="e.g. 500.00">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select class="form-control" id="ded-category">
+                    <option value="Taxes">Taxes & Payroll</option>
+                    <option value="Insurance">Health & Insurance</option>
+                    <option value="Housing">Housing & Rent / Mortgage</option>
+                    <option value="Retirement">Retirement & 401(k) / PF</option>
+                    <option value="EMI & Loan">EMI & Loan Payment</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:24px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-add-deduction')">Cancel</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="submitNewDeduction()">Save Deduction</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: IMPULSE LOCK MODAL -->
+    <div class="modal-overlay" id="modal-impulse">
+        <div class="modal-card" style="max-width:480px;">
+            <h3>🚨 Impulse Purchase Lock</h3>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:6px;">Enter the item you want to buy. Our AI will analyze your economic position while a 30-second cooling-off timer runs.</p>
+            
+            <!-- Step 1: Input Product Details -->
+            <div id="impulse-input-section" style="margin-top:16px;">
+                <div class="form-group" style="text-align:left;">
+                    <label>Product Name</label>
+                    <input type="text" class="form-control" id="impulse-title" placeholder="e.g. Gaming Chair, Designer Sneakers">
+                </div>
+                <div class="form-group" style="text-align:left;">
+                    <label>Price</label>
+                    <input type="number" class="form-control" id="impulse-amount" placeholder="e.g. 250">
+                </div>
+                <div id="eval-btn-box">
+                    <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="startImpulseEvaluation()"><i class="fa-solid fa-brain"></i> Evaluate Purchase & Start 30s Lock</button>
+                    <button class="btn btn-secondary" style="width:100%; margin-top:8px;" onclick="closeModal('modal-impulse')">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Cooling-Off Timer & AI Recommendation Box (Hidden Initially) -->
+            <div id="impulse-eval-section" style="display:none; margin-top:16px;">
+                <!-- 30-Second Ring Timer -->
+                <div class="timer-ring" id="timer-countdown">30</div>
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Cooling-off lock active. Please review AI recommendation below.</div>
+
+                <!-- AI Economic Recommendation Card -->
+                <div id="impulse-ai-box" class="feature-box" style="text-align:left; background:var(--bg-inner); border:1px solid var(--border-glass);">
+                    <div style="color:var(--primary); font-size:13px;"><i class="fa-solid fa-spinner fa-spin"></i> Analyzing your monthly income, net savings, and goals...</div>
+                </div>
+
+                <div style="display:flex; gap:12px; margin-top:16px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="cancelImpulsePurchase()"><i class="fa-solid fa-piggy-bank"></i> Nevermind, I'll Save!</button>
+                    <button class="btn btn-danger" style="flex:1;" id="btn-impulse-confirm" disabled onclick="confirmImpulsePurchase()"><i class="fa-solid fa-bag-shopping"></i> Still Buy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL: ADD EXPENSE MODAL -->
+    <div class="modal-overlay" id="modal-add-expense">
+        <div class="modal-card" style="text-align:left;">
+            <h3>➕ Add New Expense</h3>
+            <div class="form-group" style="margin-top:16px;">
+                <label>Title</label>
+                <input type="text" class="form-control" id="new-exp-title" placeholder="e.g. Supermarket Groceries">
+            </div>
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="number" class="form-control" id="new-exp-amount" placeholder="e.g. 45.00">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select class="form-control" id="new-exp-cat">
+                    <option value="Food & Groceries">Food & Groceries</option>
+                    <option value="Dining & Drinks">Dining & Drinks</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Utilities">Utilities</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Mood Before Expense</label>
+                <select class="form-control" id="new-exp-mood">
+                    <option value="Happy">😊 Happy</option>
+                    <option value="Stressed">🤯 Stressed</option>
+                    <option value="Bored">🥱 Bored</option>
+                    <option value="Neutral">😐 Neutral</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:24px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-add-expense')">Cancel</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="submitNewExpense()">Save Expense</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: INTERACTIVE DAY DETAILS MODAL -->
+    <div class="modal-overlay" id="modal-nospend-day">
+        <div class="modal-card" style="text-align:left; max-width:480px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 id="ns-day-title">📅 Date Details</h3>
+                <button style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;" onclick="closeModal('modal-nospend-day')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div id="ns-day-status-badge" style="margin-bottom:16px;"></div>
+
+            <div style="font-size:13px; font-weight:700; margin-bottom:8px;">Logged Expenses on This Day:</div>
+            <div id="ns-day-items-list" style="max-height:200px; overflow-y:auto; margin-bottom:20px;"></div>
+
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('modal-nospend-day')">Close</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="openAddExpenseForSelectedDate()"><i class="fa-solid fa-plus"></i> Add Expense</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: LEVEL-UP ACHIEVEMENT UNLOCK MODAL -->
+    <div class="modal-overlay" id="modal-goal-levelup">
+        <div class="modal-card levelup-card" style="max-width:440px;">
+            <div class="levelup-trophy-icon"><i class="fa-solid fa-trophy"></i></div>
+            <h2 id="levelup-modal-title" style="color:#fcd34d; font-size:24px; margin-bottom:6px;">🏆 Milestone Level Unlocked!</h2>
+            <p id="levelup-modal-sub" style="color:var(--text-muted); font-size:14px; margin-bottom:18px;">You reached a new Clash-of-Clans Dream Journey Milestone!</p>
+            
+            <div style="display:flex; justify-content:center; gap:16px; margin-bottom:24px;">
+                <div style="background:rgba(245,158,11,0.2); border:1px solid #fcd34d; padding:10px 18px; border-radius:var(--radius-md);">
+                    <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">XP REWARD</div>
+                    <div style="font-size:20px; font-weight:800; color:#fcd34d;" id="levelup-xp-amount">+50 XP</div>
+                </div>
+                <div style="background:rgba(99,102,241,0.2); border:1px solid var(--primary); padding:10px 18px; border-radius:var(--radius-md);">
+                    <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:700;">UNLOCKED TITLE</div>
+                    <div style="font-size:16px; font-weight:800; color:#a5b4fc;" id="levelup-badge-name">Budget Explorer</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%; padding:12px; font-size:15px; font-weight:700;" onclick="closeModal('modal-goal-levelup')">Claim Treasure & Continue Journey!</button>
+        </div>
+    </div>
+
+    <!-- MODAL: SUBSCRIPTION USAGE ANALYTICS MODAL -->
+    <div class="modal-overlay" id="modal-sub-analytics">
+        <div class="modal-card" style="text-align:left; max-width:540px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 id="sub-analytics-title" style="margin:0;"><i class="fa-solid fa-chart-pie text-indigo-400"></i> Subscription Usage Analytics</h3>
+                <button style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;" onclick="closeModal('modal-sub-analytics')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div id="sub-analytics-body">
+                <!-- Populated dynamically by openSubAnalytics() -->
+            </div>
+
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn btn-secondary" onclick="closeModal('modal-sub-analytics')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SAVINGS & HIDDEN EXPENSES DETAILS MODAL -->
+    <div class="modal-overlay" id="modal-savings-details">
+        <div class="modal-card" style="text-align:left; max-width:540px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0;"><i class="fa-solid fa-chart-pie text-emerald-400"></i> Savings & Hidden Expenses Breakdown</h3>
+                <button style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;" onclick="closeModal('modal-savings-details')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div id="savings-details-body">
+                <!-- Populated dynamically -->
+            </div>
+
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn btn-secondary" onclick="closeModal('modal-savings-details')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App JavaScript Controllers -->
+    <script src="js/theme-engine.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Dependency directories
+node_modules/
+
+# Local SQLite databases & logs
+*.db
+*.db-journal
+*.log
+
+# Environment variables
+.env
+.env.local
+
+# OS / Editor temporary files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

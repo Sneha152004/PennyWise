@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS budgets (
     alert_threshold INTEGER DEFAULT 80
 );
 
--- Savings Goals
+-- Savings Goals (Dream Goals)
 CREATE TABLE IF NOT EXISTS savings_goals (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -104,8 +104,15 @@ CREATE TABLE IF NOT EXISTS savings_goals (
     current_level INTEGER DEFAULT 1,
     xp INTEGER DEFAULT 0,
     unlocked_title VARCHAR(100) DEFAULT 'Penny Beginner',
+    category VARCHAR(50) DEFAULT 'travel',
+    destination VARCHAR(150) DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Dream Goals View (for backwards compatibility)
+CREATE OR REPLACE VIEW dream_goals AS
+SELECT id, user_id, title AS goal_name, category, destination, target_amount, current_amount AS saved_amount, target_date, created_at
+FROM savings_goals;
 
 -- Shared Goals / Accountability Buddy
 CREATE TABLE IF NOT EXISTS shared_goals (
@@ -124,10 +131,55 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     service_name VARCHAR(100) NOT NULL,
+    category VARCHAR(50) DEFAULT 'Entertainment',
     cost_per_month NUMERIC(10,2) NOT NULL,
+    renewal_date DATE DEFAULT CURRENT_DATE,
+    last_used_date DATE DEFAULT CURRENT_DATE,
+    current_month_uses INTEGER DEFAULT 1,
+    total_months_subscribed INTEGER DEFAULT 1,
+    status VARCHAR(20) DEFAULT 'Active',
+    value_score INTEGER DEFAULT 85,
+    last_reset_month VARCHAR(20) DEFAULT '',
     last_used_days INTEGER NOT NULL DEFAULT 0,
-    is_flagged_unused BOOLEAN DEFAULT false,
-    status VARCHAR(20) DEFAULT 'Active'
+    is_flagged_unused BOOLEAN DEFAULT false
+);
+
+-- Subscription History
+CREATE TABLE IF NOT EXISTS subscription_history (
+    id SERIAL PRIMARY KEY,
+    subscription_id INTEGER REFERENCES subscriptions(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    month INTEGER,
+    year INTEGER,
+    total_uses INTEGER DEFAULT 0,
+    total_cost NUMERIC(10,2) DEFAULT 0.00,
+    average_cost_per_use NUMERIC(10,2) DEFAULT 0.00,
+    value_score INTEGER DEFAULT 0,
+    recommendation TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Savings Insights
+CREATE TABLE IF NOT EXISTS savings_insights (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    month INTEGER,
+    year INTEGER,
+    hidden_expenses TEXT,
+    potential_savings NUMERIC(10,2) DEFAULT 0.00,
+    recommendations TEXT,
+    generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Purchase Feedback
+CREATE TABLE IF NOT EXISTS purchase_feedback (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    expense_id INTEGER,
+    purchase_title VARCHAR(200),
+    regret_score INTEGER,
+    feedback VARCHAR(20) CHECK(feedback IN ('Yes', 'Neutral', 'No')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Price Watch

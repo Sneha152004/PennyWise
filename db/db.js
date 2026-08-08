@@ -23,15 +23,24 @@ if (process.env.DATABASE_URL || process.env.PGDATABASE) {
 
 // Wrapper query execution for cross-database compatibility
 async function query(sql, params = []) {
+    sql = sql.trim();
     if (isPostgres) {
-        // Convert ? to $1, $2, etc. for PostgreSQL compatibility if needed
+        let isInsert = sql.toUpperCase().startsWith('INSERT');
+        let pgSql = sql;
+        if (isInsert && !pgSql.toUpperCase().includes('RETURNING')) {
+            pgSql += ' RETURNING id';
+        }
         let paramIndex = 1;
-        const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
+        pgSql = pgSql.replace(/\?/g, () => `$${paramIndex++}`);
         const res = await pgPool.query(pgSql, params);
-        return res.rows;
+        const rows = res.rows || [];
+        if (isInsert) {
+            rows.id = rows[0]?.id || 0;
+            rows.changes = res.rowCount;
+        }
+        return rows;
     } else {
         return new Promise((resolve, reject) => {
-            sql = sql.trim();
             if (sql.toUpperCase().startsWith('SELECT') || sql.toUpperCase().startsWith('PRAGMA')) {
                 sqliteDb.all(sql, params, (err, rows) => {
                     if (err) reject(err);

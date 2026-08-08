@@ -34,14 +34,19 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Initialize database and start server
-db.initDb().then(() => {
+// Initialize database
+db.initDb().catch(err => {
+    console.error('[DB Error] Initialization failed:', err);
+});
+
+// Start server if executed directly
+if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`===================================================`);
         console.log(`🚀 PennyWise Application running at http://localhost:${PORT}`);
         console.log(`===================================================`);
     });
-}).catch(err => {
-    console.error('Failed to launch PennyWise:', err);
-});
+}
+
+module.exports = app;
 

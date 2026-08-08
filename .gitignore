@@ -9,6 +9,13 @@ node_modules/
 # Environment variables
 .env
 .env.local
+.env.production
+.env*.local
+
+# Vercel & Build Outputs
+.vercel/
+dist/
+build/
 
 # OS / Editor temporary files
 .DS_Store

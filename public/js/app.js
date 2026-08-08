@@ -692,32 +692,62 @@ function renderCharts(expenses, moodData, deductions) {
     chartCatInstance = new Chart(ctxCat, {
         type: 'doughnut',
         data: {
-            labels: labels.length ? labels : ['Food & Groceries', 'Shopping', 'Transport'],
+            labels: labels.length ? labels : ['No Spending Logged'],
             datasets: [{
-                data: dataValues.length ? dataValues : [250, 330, 193.5],
-                backgroundColor: backgroundColors.length ? backgroundColors : palette.slice(0, 3)
+                data: dataValues.length ? dataValues : [1],
+                backgroundColor: backgroundColors.length ? backgroundColors : ['rgba(148, 163, 184, 0.2)']
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 12 } } } }
+            plugins: {
+                legend: { position: 'right', labels: { color: textColor, font: { size: 12 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            if (!labels.length) return 'No spending logged for this month.';
+                            return ` ${context.label}: ${currentCurrency}${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            }
         }
     });
 
-
     const ctxMood = document.getElementById('chart-mood').getContext('2d');
-    const moodLabels = (moodData && moodData.length) ? moodData.map(m => m.mood) : [];
-    const moodValues = (moodData && moodData.length) ? moodData.map(m => m.avg_amount) : [];
+    const validMoodItems = (moodData && Array.isArray(moodData)) ? moodData.filter(m => m.avg_amount && parseFloat(m.avg_amount) > 0) : [];
+    const moodLabels = validMoodItems.map(m => m.mood);
+    const moodValues = validMoodItems.map(m => parseFloat(m.avg_amount));
+
+    // Update Mood Insight Text Dynamically
+    const insightStrong = document.getElementById('mood-insight-strong');
+    if (insightStrong) {
+        if (validMoodItems.length > 0) {
+            const sortedMoods = [...validMoodItems].sort((a, b) => parseFloat(b.avg_amount) - parseFloat(a.avg_amount));
+            const highest = sortedMoods[0];
+            const second = sortedMoods[1];
+            if (second && parseFloat(second.avg_amount) > 0) {
+                const ratio = (parseFloat(highest.avg_amount) / parseFloat(second.avg_amount)).toFixed(1);
+                insightStrong.innerText = `You spend ${ratio}x more when feeling ${highest.mood}.`;
+            } else {
+                insightStrong.innerText = `Your highest average spending mood is ${highest.mood} (${currentCurrency}${parseFloat(highest.avg_amount).toFixed(2)} avg).`;
+            }
+            insightStrong.style.color = '#ec4899';
+        } else {
+            insightStrong.innerText = 'No spending logged yet. Add expenses to generate real-time mood insights!';
+            insightStrong.style.color = 'var(--text-muted)';
+        }
+    }
 
     if (chartMoodInstance) chartMoodInstance.destroy();
     chartMoodInstance = new Chart(ctxMood, {
         type: 'bar',
         data: {
-            labels: moodLabels.length ? moodLabels : ['Happy', 'Stressed', 'Bored', 'Neutral'],
+            labels: moodLabels,
             datasets: [{
                 label: `Avg Spending (${currentCurrency})`,
-                data: moodValues.length ? moodValues : [42, 118, 85, 30],
+                data: moodValues,
                 backgroundColor: 'rgba(236, 72, 153, 0.7)',
                 borderColor: '#ec4899',
                 borderWidth: 1
@@ -728,7 +758,7 @@ function renderCharts(expenses, moodData, deductions) {
             maintainAspectRatio: false,
             scales: {
                 x: { ticks: { color: mutedColor } },
-                y: { ticks: { color: mutedColor } }
+                y: { ticks: { color: mutedColor }, beginAtZero: true }
             },
             plugins: { legend: { display: false } }
         }

@@ -11,13 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initNavigation();
     startLiveClock();
-    loadDashboardData();
-    loadProfileData();
-    loadGamificationData();
-    loadSubscriptionsData();
-    renderNoSpendCalendar();
-    runFutureSimulator();
-    runTimeMachine();
 
     if (currentUserToken) {
         fetchWithAuth('/api/auth/profile')
@@ -25,11 +18,23 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(d => {
                 if (d.user && d.user.name) {
                     document.getElementById('auth-btn-label').innerText = d.user.name;
+                    showMainApp();
+                    loadDashboardData();
+                    loadProfileData();
+                    loadGamificationData();
+                    loadSubscriptionsData();
+                    renderNoSpendCalendar();
+                    runFutureSimulator();
+                    runTimeMachine();
+                } else {
+                    showAuthPage();
                 }
             })
-            .catch(() => {});
+            .catch(() => {
+                showAuthPage();
+            });
     } else {
-        setTimeout(openAuthModal, 300);
+        showAuthPage();
     }
 });
 
@@ -126,20 +131,59 @@ function closeModal(id) {
     if (m) m.classList.remove('active');
 }
 
-// AUTHENTICATION & LOGIN/REGISTER MODAL
-function openAuthModal() {
-    openModal('modal-auth');
+// DEDICATED SEPARATE AUTH PAGE & TAB SWITCHING
+function showAuthPage() {
+    const authPage = document.getElementById('auth-landing-page');
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+
+    if (authPage) authPage.style.display = 'flex';
+    if (sidebar) sidebar.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'none';
 }
 
-function toggleAuthForm(mode) {
-    if (mode === 'register') {
-        document.getElementById('form-login-box').style.display = 'none';
-        document.getElementById('form-register-box').style.display = 'block';
-        document.getElementById('auth-modal-title').innerText = '📝 Register Account';
+function showMainApp() {
+    const authPage = document.getElementById('auth-landing-page');
+    const sidebar = document.querySelector('.sidebar');
+    const mainContent = document.querySelector('.main-content');
+
+    if (authPage) authPage.style.display = 'none';
+    if (sidebar) sidebar.style.display = 'flex';
+    if (mainContent) mainContent.style.display = 'block';
+}
+
+function openAuthModal() {
+    showAuthPage();
+}
+
+function switchAuthTab(tab) {
+    const loginBox = document.getElementById('auth-login-box');
+    const regBox = document.getElementById('auth-register-box');
+    const loginTabBtn = document.getElementById('auth-tab-login');
+    const regTabBtn = document.getElementById('auth-tab-register');
+
+    if (tab === 'register') {
+        if (loginBox) loginBox.style.display = 'none';
+        if (regBox) regBox.style.display = 'block';
+        if (loginTabBtn) loginTabBtn.classList.remove('active');
+        if (regTabBtn) regTabBtn.classList.add('active');
     } else {
-        document.getElementById('form-login-box').style.display = 'block';
-        document.getElementById('form-register-box').style.display = 'none';
-        document.getElementById('auth-modal-title').innerText = '🔐 Account Login';
+        if (loginBox) loginBox.style.display = 'block';
+        if (regBox) regBox.style.display = 'none';
+        if (loginTabBtn) loginTabBtn.classList.add('active');
+        if (regTabBtn) regTabBtn.classList.remove('active');
+    }
+}
+
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+    } else {
+        input.type = 'password';
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
     }
 }
 
@@ -165,11 +209,15 @@ async function submitLogin() {
         currentCountry = data.user.country || 'United States';
 
         document.getElementById('auth-btn-label').innerText = data.user.name;
-        closeModal('modal-auth');
-        alert(`Welcome back, ${data.user.name}!`);
+        showMainApp();
 
         loadDashboardData();
         loadProfileData();
+        loadGamificationData();
+        loadSubscriptionsData();
+        renderNoSpendCalendar();
+        runFutureSimulator();
+        runTimeMachine();
     } catch (err) {
         alert('Login failed: ' + err.message);
     }
@@ -199,11 +247,15 @@ async function submitRegister() {
         currentCountry = countryVal[0];
 
         document.getElementById('auth-btn-label').innerText = data.user.name;
-        closeModal('modal-auth');
-        alert(`Account created successfully! Welcome to PennyWise, ${name}.`);
+        showMainApp();
 
         loadDashboardData();
         loadProfileData();
+        loadGamificationData();
+        loadSubscriptionsData();
+        renderNoSpendCalendar();
+        runFutureSimulator();
+        runTimeMachine();
     } catch (err) {
         alert('Registration failed: ' + err.message);
     }
@@ -1654,8 +1706,7 @@ function logoutUser() {
     localStorage.removeItem('finpilot_token');
     currentUserToken = null;
     document.getElementById('auth-btn-label').innerText = 'Login / Account';
-    alert('Logged out successfully.');
-    window.location.reload();
+    showAuthPage();
 }
 
 

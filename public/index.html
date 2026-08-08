@@ -842,38 +842,56 @@
 
     </main>
 
-    <!-- MODAL: LOGIN / REGISTER AUTH MODAL -->
-    <div class="modal-overlay" id="modal-auth">
-        <div class="modal-card" style="text-align:left;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 id="auth-modal-title" style="display:flex; align-items:center; gap:10px;"><img src="/images/logo.png" style="width:32px; height:32px; border-radius:50%;"> Account Login</h3>
-                <button style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px;" onclick="closeModal('modal-auth')"><i class="fa-solid fa-xmark"></i></button>
+    <!-- DEDICATED AUTHENTICATION LANDING PAGE (LOGIN / REGISTER SEPARATE PAGE) -->
+    <div id="auth-landing-page" style="display:none;">
+        <div class="auth-card">
+            <!-- Brand Logo & Header -->
+            <div class="auth-logo-header">
+                <img src="/images/logo.png" alt="PennyWise Logo" class="auth-logo-img">
+                <h2 style="font-size:26px; font-weight:800; color:var(--text-main); margin-bottom:4px;">PennyWise</h2>
+                <p style="font-size:13px; color:var(--text-muted); margin:0;">Intelligent Financial Behavior Platform</p>
+            </div>
+
+            <!-- Login / Register Tab Switcher -->
+            <div class="auth-tabs-nav">
+                <button id="auth-tab-login" class="auth-tab-btn active" onclick="switchAuthTab('login')">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login
+                </button>
+                <button id="auth-tab-register" class="auth-tab-btn" onclick="switchAuthTab('register')">
+                    <i class="fa-solid fa-user-plus"></i> Register
+                </button>
             </div>
 
             <!-- Login Form -->
-            <div id="form-login-box">
-                <div style="background:rgba(99,102,241,0.15); border:1px solid var(--border-glow); padding:10px 14px; border-radius:var(--radius-md); font-size:12px; margin-bottom:14px; color:#a5b4fc;">
+            <div id="auth-login-box">
+                <div style="background:rgba(99,102,241,0.15); border:1px solid var(--border-glow); padding:10px 14px; border-radius:var(--radius-md); font-size:12px; margin-bottom:16px; color:#a5b4fc;">
                     <i class="fa-solid fa-circle-info"></i> <strong>Demo Credentials:</strong><br>
                     Email: <code>alex@finpilot.ai</code> | Password: <code>password123</code>
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" class="form-control" id="login-email" value="alex@finpilot.ai">
+                    <input type="email" class="form-control" id="login-email" value="alex@finpilot.ai" placeholder="alex@finpilot.ai">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" class="form-control" id="login-password" value="password123">
+                    <div class="password-input-group">
+                        <input type="password" class="form-control" id="login-password" value="password123" placeholder="••••••••">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
-                <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="submitLogin()"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
-                <div style="display:flex; justify-content:space-between; margin-top:14px; font-size:12px;">
+                <button class="btn btn-primary" style="width:100%; margin-top:8px; padding:12px; font-weight:700;" onclick="submitLogin()">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In to Account
+                </button>
+                <div style="display:flex; justify-content:space-between; margin-top:16px; font-size:12px;">
                     <a href="#" onclick="submitForgotPassword()" style="color:var(--accent-yellow);"><i class="fa-solid fa-key"></i> Forgot password?</a>
-                    <a href="#" onclick="toggleAuthForm('register')" style="color:var(--primary);">Register here</a>
+                    <a href="#" onclick="switchAuthTab('register')" style="color:var(--primary); font-weight:700;">Need an account? Register</a>
                 </div>
-
             </div>
 
             <!-- Register Form -->
-            <div id="form-register-box" style="display:none;">
+            <div id="auth-register-box" style="display:none;">
                 <div class="form-group">
                     <label>Full Name</label>
                     <input type="text" class="form-control" id="reg-name" placeholder="John Doe">
@@ -884,7 +902,12 @@
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" class="form-control" id="reg-password" placeholder="••••••••">
+                    <div class="password-input-group">
+                        <input type="password" class="form-control" id="reg-password" placeholder="••••••••">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-password', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Country & Currency</label>
@@ -899,8 +922,12 @@
                         <option value="United Arab Emirates|AED">🇦🇪 United Arab Emirates - AED (AED)</option>
                     </select>
                 </div>
-                <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="submitRegister()"><i class="fa-solid fa-user-plus"></i> Create Account</button>
-                <p style="text-align:center; font-size:13px; color:var(--text-muted); margin-top:14px;">Already have an account? <a href="#" onclick="toggleAuthForm('login')" style="color:var(--primary);">Login here</a></p>
+                <button class="btn btn-primary" style="width:100%; margin-top:8px; padding:12px; font-weight:700;" onclick="submitRegister()">
+                    <i class="fa-solid fa-user-plus"></i> Create Account
+                </button>
+                <p style="text-align:center; font-size:13px; color:var(--text-muted); margin-top:16px;">
+                    Already have an account? <a href="#" onclick="switchAuthTab('login')" style="color:var(--primary); font-weight:700;">Login here</a>
+                </p>
             </div>
         </div>
     </div>

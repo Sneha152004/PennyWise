@@ -146,9 +146,11 @@ async function initDb() {
             console.error('[DB Migration Warning] Column backfill skipped:', e.message);
         }
 
+        const pkType = isPostgres ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+
         await query(`
             CREATE TABLE IF NOT EXISTS subscription_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id ${pkType},
                 subscription_id INTEGER,
                 user_id INTEGER,
                 month INTEGER,
@@ -158,7 +160,7 @@ async function initDb() {
                 average_cost_per_use REAL DEFAULT 0.00,
                 value_score INTEGER DEFAULT 0,
                 recommendation TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(subscription_id) REFERENCES subscriptions(id) ON DELETE CASCADE,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             )
@@ -166,35 +168,36 @@ async function initDb() {
 
         await query(`
             CREATE TABLE IF NOT EXISTS savings_insights (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id ${pkType},
                 user_id INTEGER,
                 month INTEGER,
                 year INTEGER,
                 hidden_expenses TEXT,
                 potential_savings REAL DEFAULT 0.00,
                 recommendations TEXT,
-                generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `);
 
         await query(`
             CREATE TABLE IF NOT EXISTS purchase_feedback (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id ${pkType},
                 user_id INTEGER,
                 expense_id INTEGER,
                 purchase_title TEXT,
                 regret_score INTEGER,
-                feedback TEXT CHECK(feedback IN ('Yes', 'Neutral', 'No')),
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                feedback VARCHAR(20) CHECK(feedback IN ('Yes', 'Neutral', 'No')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `);
 
-        // Verify subscriptions schema
-        const pragmaInfo = await query(`PRAGMA table_info(subscriptions)`);
-        const colNames = pragmaInfo.map(c => c.name);
-        console.log('[DB] Verified subscriptions table columns:', colNames.join(', '));
+        if (!isPostgres) {
+            const pragmaInfo = await query(`PRAGMA table_info(subscriptions)`);
+            const colNames = pragmaInfo.map(c => c.name);
+            console.log('[DB] Verified subscriptions table columns:', colNames.join(', '));
+        }
         console.log('[DB] Tables initialized successfully.');
 
         // Seed initial data if empty

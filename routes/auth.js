@@ -57,10 +57,10 @@ router.post('/register', async (req, res) => {
         const newUser = newlyCreated[0];
         const newUserId = newUser.id;
 
-        // Insert settings for new user
+        // Insert settings for new user with zero pre-populated salary/income target
         await db.query(`
-            INSERT INTO user_settings (user_id, country, currency)
-            VALUES (?, ?, ?)
+            INSERT INTO user_settings (user_id, country, currency, monthly_income_target)
+            VALUES (?, ?, ?, 0)
         `, [newUserId, country || 'United States', currency || '$']);
 
         const token = jwt.sign({ id: newUserId, email: cleanEmail, name: cleanName, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });

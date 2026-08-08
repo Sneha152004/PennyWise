@@ -34,15 +34,30 @@ router.get('/', authenticateToken, async (req, res) => {
         else if (hour >= 17) greetingTime = 'Good evening';
         const greeting = `${greetingTime}, ${userName} 👋`;
 
-        // Income & Expenses Summary
+        // Income & Expenses Summary (Clean slate for new users; demo fallbacks for User ID 1)
         const incomeRes = await db.query('SELECT SUM(amount) as total FROM income WHERE user_id = ?', [userId]);
         const deductionRes = await db.query('SELECT SUM(amount) as total FROM deductions WHERE user_id = ?', [userId]);
         const expenseRes = await db.query('SELECT SUM(amount) as total FROM expenses WHERE user_id = ?', [userId]);
-        const targetIncome = settingsRes[0]?.monthly_income_target || 5200.00;
-        
-        const totalIncome = (incomeRes[0]?.total !== null && incomeRes[0]?.total !== undefined && parseFloat(incomeRes[0].total) > 0) ? parseFloat(incomeRes[0].total) : parseFloat(targetIncome);
-        const totalDeductions = parseFloat(deductionRes[0]?.total || 1300.00);
-        const netTakeHomeIncome = totalIncome - totalDeductions;
+
+        const rawIncomeTotal = incomeRes[0]?.total !== null && incomeRes[0]?.total !== undefined ? parseFloat(incomeRes[0].total) : 0;
+        const targetIncome = settingsRes[0]?.monthly_income_target !== null && settingsRes[0]?.monthly_income_target !== undefined ? parseFloat(settingsRes[0].monthly_income_target) : 0;
+
+        let totalIncome = 0;
+        if (rawIncomeTotal > 0) {
+            totalIncome = rawIncomeTotal;
+        } else if (targetIncome > 0) {
+            totalIncome = targetIncome;
+        } else if (userId === 1) {
+            totalIncome = 5200.00;
+        }
+
+        const rawDeductionTotal = deductionRes[0]?.total !== null && deductionRes[0]?.total !== undefined ? parseFloat(deductionRes[0].total) : 0;
+        let totalDeductions = rawDeductionTotal;
+        if (rawDeductionTotal === 0 && userId === 1) {
+            totalDeductions = 1300.00;
+        }
+
+        const netTakeHomeIncome = Math.max(0, totalIncome - totalDeductions);
         const totalExpenses = parseFloat(expenseRes[0]?.total || 0.00);
         const netSavings = netTakeHomeIncome - totalExpenses;
 

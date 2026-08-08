@@ -9,6 +9,7 @@
     "test": "jest tests/unit tests/integration --verbose"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
@@ -17,7 +18,8 @@
     "multer": "^2.0.2",
     "pdfkit": "^0.19.1",
     "pg": "^8.16.0",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "jest": "^30.4.2",

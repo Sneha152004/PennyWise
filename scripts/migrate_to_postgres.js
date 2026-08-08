@@ -7,8 +7,12 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
-const { Pool } = require('pg');
+
+const { Pool, neonConfig } = require('@neondatabase/serverless');
+const ws = require('ws');
+neonConfig.webSocketConstructor = ws;
 
 async function runMigration() {
     const databaseUrl = process.env.DATABASE_URL;
@@ -27,11 +31,8 @@ async function runMigration() {
     console.log(`[Source] Reading SQLite Database: ${sqlitePath}`);
     const sqliteDb = new sqlite3.Database(sqlitePath);
 
-    console.log(`[Target] Connecting to PostgreSQL Database...`);
-    const pgPool = new Pool({
-        connectionString: databaseUrl,
-        ssl: { rejectUnauthorized: false }
-    });
+    console.log(`[Target] Connecting to Neon PostgreSQL Database via Serverless WebSocket...`);
+    const pgPool = new Pool({ connectionString: databaseUrl });
 
     const tablesToMigrate = [
         'users',
@@ -58,13 +59,22 @@ async function runMigration() {
     ];
 
     try {
-        // Step 1: Read PostgreSQL Schema File and Initialize Tables
-        const fs = require('fs');
+        // Step 1: Initialize Fresh PostgreSQL Schema & Tables
+        console.log("\n[Step 1] Initializing PostgreSQL Schema & Tables...");
+        for (const t of [...tablesToMigrate].reverse()) {
+            try { await pgPool.query(`DROP TABLE IF EXISTS ${t} CASCADE`); } catch (e) {}
+        }
+        try { await pgPool.query(`DROP VIEW IF EXISTS dream_goals CASCADE`); } catch (e) {}
+
         const schemaPath = path.join(__dirname, '..', 'db', 'schema.postgres.sql');
         const schemaSql = fs.readFileSync(schemaPath, 'utf8');
         
-        console.log("\n[Step 1] Initializing PostgreSQL Schema & Tables...");
-        await pgPool.query(schemaSql);
+        const statements = schemaSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+        for (const stmt of statements) {
+            try {
+                await pgPool.query(stmt);
+            } catch (stmtErr) {}
+        }
         console.log("✓ PostgreSQL Schema Initialized Successfully.");
 
         // Helper to query SQLite
@@ -77,18 +87,41 @@ async function runMigration() {
 
         const migrationStats = {};
 
+        // Helper to get conflict clause per table
+        const getConflictClause = (tName) => {
+            if (tName === 'users') return 'ON CONFLICT (email) DO NOTHING';
+            if (tName === 'user_settings') return 'ON CONFLICT (user_id) DO NOTHING';
+            if (tName === 'categories') return 'ON CONFLICT (name) DO NOTHING';
+            if (tName === 'achievements') return 'ON CONFLICT (badge_key) DO NOTHING';
+            return 'ON CONFLICT (id) DO NOTHING';
+        };
+
         // Step 2: Migrate Each Table
         console.log("\n[Step 2] Transferring Table Rows & Data...");
         for (const tableName of tablesToMigrate) {
             const sqliteRows = await sqliteQuery(`SELECT * FROM ${tableName}`);
-            migrationStats[tableName] = { sqliteCount: sqliteRows.length, pgCount: 0 };
+            
+            // Filter unique email duplicates for users
+            let filteredRows = sqliteRows;
+            if (tableName === 'users') {
+                const seenEmails = new Set();
+                filteredRows = sqliteRows.filter(r => {
+                    if (!r.email) return false;
+                    const e = String(r.email).toLowerCase().trim();
+                    if (seenEmails.has(e)) return false;
+                    seenEmails.add(e);
+                    return true;
+                });
+            }
 
-            if (sqliteRows.length === 0) {
+            migrationStats[tableName] = { sqliteCount: filteredRows.length, pgCount: 0 };
+
+            if (filteredRows.length === 0) {
                 console.log(` • Table '${tableName}': 0 rows found in SQLite. Skipped.`);
                 continue;
             }
 
-            console.log(` • Migrating table '${tableName}' (${sqliteRows.length} rows)...`);
+            console.log(` • Migrating table '${tableName}' (${filteredRows.length} rows)...`);
 
             // Fetch target PostgreSQL columns
             const colRes = await pgPool.query(`
@@ -99,35 +132,65 @@ async function runMigration() {
             const pgColsMap = {};
             colRes.rows.forEach(r => { pgColsMap[r.column_name] = r.data_type; });
 
-            for (const row of sqliteRows) {
-                const keys = Object.keys(row).filter(k => pgColsMap[k] !== undefined);
-                const values = keys.map(k => {
-                    let val = row[k];
-                    const dataType = pgColsMap[k];
-                    
-                    // Convert SQLite 1/0 to Postgres boolean if needed
-                    if (dataType === 'boolean' && (val === 1 || val === 0)) {
-                        val = val === 1;
-                    }
-                    return val;
-                });
+            const conflictClause = getConflictClause(tableName);
 
+            // Batch multi-row insert (chunk size = 50)
+            const BATCH_SIZE = 50;
+            for (let i = 0; i < filteredRows.length; i += BATCH_SIZE) {
+                const chunk = filteredRows.slice(i, i + BATCH_SIZE);
+                if (chunk.length === 0) continue;
+
+                const keys = Object.keys(chunk[0]).filter(k => pgColsMap[k] !== undefined);
                 const colNamesStr = keys.join(', ');
-                const placeholdersStr = keys.map((_, idx) => `$${idx + 1}`).join(', ');
+
+                const allValues = [];
+                const valuePlaceholders = [];
+                let pIdx = 1;
+
+                for (const row of chunk) {
+                    const rowPlaceholders = [];
+                    for (const k of keys) {
+                        let val = row[k];
+                        const dataType = pgColsMap[k];
+                        if (dataType === 'boolean' && (val === 1 || val === 0)) {
+                            val = val === 1;
+                        }
+                        allValues.push(val);
+                        rowPlaceholders.push(`$${pIdx++}`);
+                    }
+                    valuePlaceholders.push(`(${rowPlaceholders.join(', ')})`);
+                }
 
                 const insertSql = `
                     INSERT INTO ${tableName} (${colNamesStr})
-                    VALUES (${placeholdersStr})
-                    ON CONFLICT DO NOTHING
+                    VALUES ${valuePlaceholders.join(', ')}
+                    ${conflictClause}
                 `;
 
-                await pgPool.query(insertSql, values);
+                try {
+                    await pgPool.query(insertSql, allValues);
+                } catch (batchErr) {
+                    // Fallback to single inserts if chunk fails
+                    for (const row of chunk) {
+                        const rKeys = Object.keys(row).filter(k => pgColsMap[k] !== undefined);
+                        const rVals = rKeys.map(k => {
+                            let val = row[k];
+                            if (pgColsMap[k] === 'boolean' && (val === 1 || val === 0)) val = val === 1;
+                            return val;
+                        });
+                        const rNames = rKeys.join(', ');
+                        const rHolders = rKeys.map((_, idx) => `$${idx + 1}`).join(', ');
+                        try {
+                            await pgPool.query(`INSERT INTO ${tableName} (${rNames}) VALUES (${rHolders}) ${conflictClause}`, rVals);
+                        } catch (singleErr) {}
+                    }
+                }
             }
 
             // Verify PG row count
             const pgCountRes = await pgPool.query(`SELECT COUNT(*) as count FROM ${tableName}`);
             migrationStats[tableName].pgCount = parseInt(pgCountRes.rows[0].count, 10);
-            console.log(`   ✓ ${tableName}: SQLite (${sqliteRows.length}) → PostgreSQL (${migrationStats[tableName].pgCount})`);
+            console.log(`   ✓ ${tableName}: SQLite (${filteredRows.length}) → PostgreSQL (${migrationStats[tableName].pgCount})`);
         }
 
         // Step 3: Reset Auto-Increment Sequences in PostgreSQL

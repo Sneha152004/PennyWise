@@ -1,7 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const { Pool } = require('pg');
+const { Pool: PgPool } = require('pg');
+let NeonPool = null;
+try {
+    const neonServerless = require('@neondatabase/serverless');
+    NeonPool = neonServerless.Pool;
+    if (neonServerless.neonConfig) {
+        try {
+            neonServerless.neonConfig.webSocketConstructor = require('ws');
+        } catch (wsErr) {}
+    }
+} catch (e) {
+    NeonPool = PgPool;
+}
 
 let isPostgres = false;
 let pgPool = null;
@@ -11,9 +23,10 @@ let sqliteDb = null;
 if (process.env.DATABASE_URL || process.env.PGDATABASE) {
     isPostgres = true;
     console.log('[DB] Connecting to PostgreSQL Database...');
-    pgPool = new Pool({
+    const SelectedPool = NeonPool || PgPool;
+    pgPool = new SelectedPool({
         connectionString: process.env.DATABASE_URL,
-        ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+        ssl: { rejectUnauthorized: false }
     });
 } else {
     console.log('[DB] Using local SQLite database (finpilot.db)...');

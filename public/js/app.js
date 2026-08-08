@@ -2263,7 +2263,33 @@ async function loadAnalyticsDataForMonth(year, month) {
         }
     }
 
-    renderCharts(monthExpenses, [], []);
+    // Compute real moodData dynamically from logged expenses for the month
+    const moodMap = {};
+    monthExpenses.forEach(e => {
+        const m = e.mood || 'Neutral';
+        if (!moodMap[m]) {
+            moodMap[m] = { mood: m, total_amount: 0, count: 0 };
+        }
+        moodMap[m].total_amount += parseFloat(e.amount || 0);
+        moodMap[m].count += 1;
+    });
+
+    const moodData = Object.values(moodMap).map(item => ({
+        mood: item.mood,
+        avg_amount: (item.total_amount / item.count).toFixed(2),
+        count: item.count
+    }));
+
+    let deductions = [];
+    try {
+        const dRes = await fetchWithAuth('/api/auth/profile');
+        const dData = await dRes.json();
+        if (dData && Array.isArray(dData.deductions)) {
+            deductions = dData.deductions;
+        }
+    } catch (err) {}
+
+    renderCharts(monthExpenses, moodData, deductions);
     await loadSavingsOpportunities(padMonth, year);
 }
 

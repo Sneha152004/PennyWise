@@ -499,6 +499,14 @@ async function handleCreateDreamGoal(req, res) {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [userId, goalTitle, goalCat, goalDest, target, current, goalDate, emoji, goalTheme, level, xpAwarded, unlockedTitle]);
 
+        // Automatically record initial goal savings deposit as an expense
+        if (current > 0) {
+            await db.query(`
+                INSERT INTO expenses (user_id, title, amount, category, location, mood, is_impulse, carbon_score, date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE)
+            `, [userId, `Savings: ${goalTitle}`, current, 'Savings Goals', 'Dream Goals', 'Happy', 0, 'Low']);
+        }
+
         console.log('[Dream Goals API Debug] SQL Insert executed successfully with ID:', result.id);
 
         const fetchCheck = await db.query('SELECT * FROM savings_goals WHERE user_id = ? ORDER BY id DESC', [userId]);
@@ -556,13 +564,21 @@ router.put('/goals/:id', authenticateToken, async (req, res) => {
         const oldLevel = oldGoal.current_level || 1;
 
         let newCurrentAmount = parseFloat(oldGoal.current_amount || 0);
+        let depositAmount = 0;
+
         if (add_amount !== undefined && add_amount !== null) {
             const numToAdd = parseFloat(add_amount);
-            if (!isNaN(numToAdd)) {
+            if (!isNaN(numToAdd) && numToAdd > 0) {
+                depositAmount = numToAdd;
                 newCurrentAmount += numToAdd;
             }
         } else if (current_amount !== undefined && current_amount !== null) {
-            newCurrentAmount = parseFloat(current_amount);
+            const targetCurrent = parseFloat(current_amount);
+            const oldCurrent = parseFloat(oldGoal.current_amount || 0);
+            if (!isNaN(targetCurrent) && targetCurrent > oldCurrent) {
+                depositAmount = targetCurrent - oldCurrent;
+            }
+            newCurrentAmount = targetCurrent;
         }
 
         const newTargetAmount = target_amount !== undefined ? parseFloat(target_amount) : parseFloat(oldGoal.target_amount || 1000);
@@ -580,6 +596,14 @@ router.put('/goals/:id', authenticateToken, async (req, res) => {
                 unlocked_title = ?
             WHERE id = ? AND user_id = ?
         `, [newCurrentAmount, newTargetAmount, newTitle, newLevel, xpAwarded, unlockedTitle, goalId, userId]);
+
+        // Automatically record goal savings deposit as an expense
+        if (depositAmount > 0) {
+            await db.query(`
+                INSERT INTO expenses (user_id, title, amount, category, location, mood, is_impulse, carbon_score, date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE)
+            `, [userId, `Savings: ${newTitle}`, depositAmount, 'Savings Goals', 'Dream Goals', 'Happy', 0, 'Low']);
+        }
 
         let levelUp = false;
         let xpGained = 0;
